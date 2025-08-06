@@ -228,23 +228,18 @@ function handleWebLogin(e) {
   });
   
   // Validate credentials
-  const user = validateWebCredentials(email, password);
+  const result = validateWebCredentials(email, password);
   
-  if (!user) {
+  if (!result || !result.success) {
+    const errorMessage = result?.error || 'Invalid email or password';
     logDetailedActivity('Login Failed', `Failed login for email: ${email}`, {
       email: email,
-      reason: 'Invalid credentials'
+      reason: errorMessage
     });
-    return { success: false, error: 'Invalid email or password' };
+    return { success: false, error: errorMessage };
   }
   
-  if (user.status !== 'Active') {
-    logDetailedActivity('Login Failed', `Failed login for email: ${email}`, {
-      email: email,
-      reason: 'Account inactive'
-    });
-    return { success: false, error: 'Account is inactive. Contact administrator.' };
-  }
+  const user = result.user;
   
   // Create session
   const sessionToken = createSession(user);
@@ -296,32 +291,71 @@ function handleWebLogout(e) {
  */
 function validateWebCredentials(email, password) {
   try {
-    const usersSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEETS.USERS);
-    if (!usersSheet) return null;
+    console.log(`Validating credentials for: ${email}`);
     
-    const data = getSheetData(CONFIG.SHEETS.USERS);
+    const usersSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+    if (!usersSheet) {
+      console.log('❌ Users sheet not found');
+      return { error: 'Users sheet not found' };
+    }
     
-    for (let row of data) {
+    const lastRow = usersSheet.getLastRow();
+    console.log(`Users sheet has ${lastRow} rows`);
+    
+    if (lastRow < 2) {
+      console.log('❌ No users in sheet');
+      return { error: 'No users found in system' };
+    }
+    
+    // Get all user data
+    const data = usersSheet.getRange(2, 1, lastRow - 1, 6).getValues();
+    console.log(`Checking ${data.length} users`);
+    
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      console.log(`Checking user ${i + 1}: ${row[0]}`);
+      
       if (row[0] === email) {
-        // Check password from sheet (column C, index 2)
+        console.log(`✅ Email match found`);
+        console.log(`User status: ${row[4]}`);
+        
+        // Check if user is active
+        if (row[4] !== 'Active') {
+          console.log(`❌ User account not active: ${row[4]}`);
+          return { error: 'Account is not active' };
+        }
+        
+        // Check password
         const storedPassword = row[2];
+        console.log(`Password check: stored="${storedPassword}", provided="${password}"`);
         
         if (storedPassword === password) {
+          console.log('✅ Password match - login successful');
           return {
-            email: row[0],      // Email
-            name: row[1],       // Name
-            role: row[3],       // Role (column D)
-            status: row[4],     // Status (column E)
-            dateAdded: row[5]   // Date Added (column F)
+            success: true,
+            user: {
+              email: row[0],      // Email
+              name: row[1],       // Name
+              role: row[3],       // Role (column D)
+              status: row[4],     // Status (column E)
+              dateAdded: row[5]   // Date Added (column F)
+            }
           };
+        } else {
+          console.log('❌ Password mismatch');
+          return { error: 'Invalid password' };
         }
       }
     }
     
-    return null;
+    console.log(`❌ Email not found: ${email}`);
+    const allEmails = data.map(row => row[0]);
+    console.log('Available emails:', allEmails);
+    return { error: 'Email not found' };
+    
   } catch (error) {
     console.error('Error validating credentials:', error);
-    return null;
+    return { error: error.toString() };
   }
 }
 
