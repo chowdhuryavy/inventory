@@ -118,7 +118,7 @@ function doPost(e) {
  * Show login page
  */
 function showLoginPage() {
-  const template = HtmlService.createTemplateFromFile('WebLogin-Professional');
+  const template = HtmlService.createTemplateFromFile('WebLogin-Mobile');
   template.appUrl = ScriptApp.getService().getUrl();
   
   // Get company settings
@@ -230,49 +230,83 @@ function showAccessDeniedPage() {
  * Handle web login
  */
 function handleWebLogin(e) {
-  const email = e.parameter.email;
-  const password = e.parameter.password;
-  
-  // Log login attempt
-  logDetailedActivity('Login Attempt', `Login attempt for email: ${email}`, {
-    email: email,
-    userAgent: e.parameter.userAgent || 'Unknown',
-    timestamp: new Date()
-  });
-  
-  // Validate credentials
-  const result = validateWebCredentials(email, password);
-  
-  if (!result || !result.success) {
-    const errorMessage = result?.error || 'Invalid email or password';
-    logDetailedActivity('Login Failed', `Failed login for email: ${email}`, {
+  try {
+    console.log('handleWebLogin called with parameters:', e.parameter);
+    
+    const email = e.parameter.email;
+    const password = e.parameter.password;
+    
+    if (!email || !password) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: 'Email and password are required'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    console.log(`Login attempt for: ${email}`);
+    
+    // Log login attempt
+    logDetailedActivity('Login Attempt', `Login attempt for email: ${email}`, {
       email: email,
-      reason: errorMessage
+      userAgent: e.parameter.userAgent || 'Unknown',
+      timestamp: new Date()
     });
-    return { success: false, error: errorMessage };
-  }
-  
-  const user = result.user;
-  
-  // Create session
-  const sessionToken = createSession(user);
-  
-  logDetailedActivity('Login Success', `Successful login for: ${user.name}`, {
-    email: user.email,
-    role: user.role,
-    sessionToken: sessionToken
-  });
-  
-  return {
-    success: true,
-    sessionToken: sessionToken,
-    user: {
+    
+    // Validate credentials
+    const result = validateWebCredentials(email, password);
+    console.log('Validation result:', result);
+    
+    if (!result || !result.success) {
+      const errorMessage = result?.error || 'Invalid email or password';
+      console.log('Login failed:', errorMessage);
+      
+      logDetailedActivity('Login Failed', `Failed login for email: ${email}`, {
+        email: email,
+        reason: errorMessage
+      });
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: errorMessage
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    const user = result.user;
+    console.log('User authenticated:', user.email);
+    
+    // Create session
+    const sessionToken = createSession(user);
+    console.log('Session created:', sessionToken);
+    
+    logDetailedActivity('Login Success', `Successful login for: ${user.name}`, {
       email: user.email,
-      name: user.name,
-      role: user.role
-    },
-    redirectUrl: `${ScriptApp.getService().getUrl()}?page=dashboard&sessionToken=${sessionToken}`
-  };
+      role: user.role,
+      sessionToken: sessionToken
+    });
+    
+    const response = {
+      success: true,
+      sessionToken: sessionToken,
+      user: {
+        email: user.email,
+        name: user.name,
+        role: user.role
+      },
+      redirectUrl: `${ScriptApp.getService().getUrl()}?page=dashboard&sessionToken=${sessionToken}`
+    };
+    
+    console.log('Login response:', response);
+    
+    return ContentService.createTextOutput(JSON.stringify(response))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    console.error('Login error:', error);
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: 'Login system error: ' + error.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
 /**
