@@ -93,11 +93,12 @@ function addUser(userData) {
     }
     
     const newUser = [
-      userData.email,
-      userData.name,
-      userData.role,
-      userData.status || 'Active',
-      new Date()
+      userData.email,                    // Email
+      userData.name,                     // Name  
+      userData.password || 'temp123',    // Password (temporary)
+      userData.role,                     // Role
+      userData.status || 'Active',       // Status
+      new Date()                         // Date Added
     ];
     
     sheet.appendRow(newUser);
@@ -131,8 +132,8 @@ function updateUser(email, userData) {
       throw new Error('User not found');
     }
     
-    const currentData = sheet.getRange(rowIndex, 1, 1, 5).getValues()[0];
-    const targetUserRole = currentData[2];
+    const currentData = sheet.getRange(rowIndex, 1, 1, 6).getValues()[0];
+    const targetUserRole = currentData[3]; // Role is now column D (index 3)
     
     // Role-based restrictions
     if (currentUserRole === CONFIG.ROLES.ADMIN && targetUserRole === CONFIG.ROLES.SUPER_ADMIN) {
@@ -158,10 +159,11 @@ function updateUser(email, userData) {
     
     const updatedUser = [
       currentData[0], // Email cannot be changed
-      userData.name || currentData[1],
-      userData.role || currentData[2],
-      userData.status || currentData[3],
-      currentData[4] // Keep original date added
+      userData.name || currentData[1],        // Name
+      userData.password || currentData[2],    // Password (keep existing if not provided)
+      userData.role || currentData[3],        // Role
+      userData.status || currentData[4],      // Status
+      currentData[5] // Keep original date added
     ];
     
     sheet.getRange(rowIndex, 1, 1, updatedUser.length).setValues([updatedUser]);

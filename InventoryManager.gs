@@ -241,7 +241,7 @@ function updateStock(sku, quantityChange, action, remarks) {
 }
 
 /**
- * Log stock changes
+ * Log stock changes (updated for your sheet structure)
  */
 function logStockChange(sku, productName, action, quantity, remarks) {
   try {
@@ -249,13 +249,13 @@ function logStockChange(sku, productName, action, quantity, remarks) {
     const currentUserEmail = Session.getActiveUser().getEmail();
     
     const logEntry = [
-      new Date(),
-      sku,
-      productName,
-      action,
-      quantity,
-      currentUserEmail,
-      remarks || ''
+      new Date(),         // Timestamp
+      sku,                // SKU
+      productName,        // Product Name
+      action,             // Action
+      quantity,           // Quantity
+      currentUserEmail,   // Updated By
+      remarks || ''       // Remarks
     ];
     
     stockLogSheet.appendRow(logEntry);

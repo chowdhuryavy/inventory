@@ -68,7 +68,7 @@ function initializeSystem() {
 }
 
 /**
- * Create Inventory sheet with proper headers
+ * Create Inventory sheet with proper headers (matching your structure)
  */
 function createInventorySheet(ss) {
   let sheet = ss.getSheetByName(CONFIG.SHEETS.INVENTORY);
@@ -76,7 +76,7 @@ function createInventorySheet(ss) {
     sheet = ss.insertSheet(CONFIG.SHEETS.INVENTORY);
   }
   
-  // Clear existing content and set headers
+  // Clear existing content and set headers to match your structure
   sheet.clear();
   const headers = [
     'SKU', 'Product Name', 'Category', 'Quantity', 'Unit Price', 
@@ -98,7 +98,7 @@ function createInventorySheet(ss) {
 }
 
 /**
- * Create Users sheet with proper headers
+ * Create Users sheet with proper headers (matching your structure)
  */
 function createUsersSheet(ss) {
   let sheet = ss.getSheetByName(CONFIG.SHEETS.USERS);
@@ -107,20 +107,20 @@ function createUsersSheet(ss) {
   }
   
   sheet.clear();
-  const headers = ['Email', 'Name', 'Role', 'Status', 'Date Added'];
+  const headers = ['Email', 'Name', 'Password', 'Role', 'Status', 'Date Added'];
   
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
   sheet.setFrozenRows(1);
   
   // Format date column
-  sheet.getRange('E:E').setNumberFormat('MM/dd/yyyy hh:mm');
+  sheet.getRange('F:F').setNumberFormat('MM/dd/yyyy hh:mm');
   
   return sheet;
 }
 
 /**
- * Create Stock Log sheet with proper headers
+ * Create Stock Log sheet with proper headers (matching your structure)
  */
 function createStockLogSheet(ss) {
   let sheet = ss.getSheetByName(CONFIG.SHEETS.STOCK_LOG);
@@ -138,14 +138,14 @@ function createStockLogSheet(ss) {
   sheet.setFrozenRows(1);
   
   // Format columns
-  sheet.getRange('A:A').setNumberFormat('MM/dd/yyyy hh:mm:ss');
-  sheet.getRange('E:E').setNumberFormat('#,##0');
+  sheet.getRange('A:A').setNumberFormat('MM/dd/yyyy hh:mm:ss'); // Timestamp
+  sheet.getRange('E:E').setNumberFormat('#,##0'); // Quantity column
   
   return sheet;
 }
 
 /**
- * Create Activity Log sheet with proper headers for detailed logging
+ * Create Activity Log sheet with proper headers (matching your structure)
  */
 function createActivityLogSheet(ss) {
   let sheet = ss.getSheetByName(CONFIG.SHEETS.ACTIVITY_LOG);
@@ -154,7 +154,7 @@ function createActivityLogSheet(ss) {
   }
   
   sheet.clear();
-  const headers = ['Timestamp', 'User Email', 'Category', 'Description', 'Details (JSON)'];
+  const headers = ['Timestamp', 'User Email', 'Action', 'Description'];
   
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
@@ -166,9 +166,8 @@ function createActivityLogSheet(ss) {
   // Set column widths for better readability
   sheet.setColumnWidth(1, 150); // Timestamp
   sheet.setColumnWidth(2, 200); // User Email
-  sheet.setColumnWidth(3, 120); // Category
-  sheet.setColumnWidth(4, 300); // Description
-  sheet.setColumnWidth(5, 400); // Details JSON
+  sheet.setColumnWidth(3, 150); // Action
+  sheet.setColumnWidth(4, 400); // Description
   
   return sheet;
 }
@@ -189,7 +188,7 @@ function createReportsSheet(ss) {
 }
 
 /**
- * Setup initial Super Admin user
+ * Setup initial Super Admin user (updated for your sheet structure)
  */
 function setupInitialSuperAdmin() {
   const usersSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEETS.USERS);
@@ -202,18 +201,19 @@ function setupInitialSuperAdmin() {
   
   const currentUserEmail = Session.getActiveUser().getEmail();
   const newUser = [
-    currentUserEmail,
-    'System Administrator',
-    CONFIG.ROLES.SUPER_ADMIN,
-    'Active',
-    new Date()
+    currentUserEmail,           // Email
+    'System Administrator',     // Name
+    'admin123',                // Default Password (user can change)
+    CONFIG.ROLES.SUPER_ADMIN,  // Role
+    'Active',                  // Status
+    new Date()                 // Date Added
   ];
   
   usersSheet.getRange(2, 1, 1, newUser.length).setValues([newUser]);
 }
 
 /**
- * Get current user's role
+ * Get current user's role (updated for your sheet structure)
  */
 function getCurrentUserRole() {
   try {
@@ -225,11 +225,11 @@ function getCurrentUserRole() {
     const lastRow = usersSheet.getLastRow();
     if (lastRow < 2) return null;
     
-    const data = usersSheet.getRange(2, 1, lastRow - 1, 4).getValues();
+    const data = usersSheet.getRange(2, 1, lastRow - 1, 6).getValues();
     
     for (let i = 0; i < data.length; i++) {
-      if (data[i][0] === currentUserEmail && data[i][3] === 'Active') {
-        return data[i][2]; // Return role
+      if (data[i][0] === currentUserEmail && data[i][4] === 'Active') {
+        return data[i][3]; // Return role (column D)
       }
     }
     
@@ -262,18 +262,19 @@ function hasPermission(action) {
 }
 
 /**
- * Log user activity
+ * Log user activity (updated for your sheet structure)
  */
 function logActivity(action, description) {
   try {
     const activitySheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEETS.ACTIVITY_LOG);
     const currentUserEmail = Session.getActiveUser().getEmail();
     
+    // Format: Timestamp, User Email, Action, Description
     const logEntry = [
-      new Date(),
-      currentUserEmail,
-      action,
-      description
+      new Date(),        // Timestamp
+      currentUserEmail,  // User Email
+      action,           // Action
+      description       // Description
     ];
     
     activitySheet.appendRow(logEntry);

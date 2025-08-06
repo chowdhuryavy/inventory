@@ -303,22 +303,16 @@ function validateWebCredentials(email, password) {
     
     for (let row of data) {
       if (row[0] === email) {
-        // For now, we'll use a simple password system
-        // In production, you'd want proper password hashing
-        const storedPassword = getStoredPassword(email);
+        // Check password from sheet (column C, index 2)
+        const storedPassword = row[2];
         
-        if (storedPassword === password || !storedPassword) {
-          // If no password set, accept any password and set it
-          if (!storedPassword) {
-            setStoredPassword(email, password);
-          }
-          
+        if (storedPassword === password) {
           return {
-            email: row[0],
-            name: row[1],
-            role: row[2],
-            status: row[3],
-            dateAdded: row[4]
+            email: row[0],      // Email
+            name: row[1],       // Name
+            role: row[3],       // Role (column D)
+            status: row[4],     // Status (column E)
+            dateAdded: row[5]   // Date Added (column F)
           };
         }
       }
@@ -457,12 +451,12 @@ function logDetailedActivity(category, description, details = {}) {
   try {
     const activitySheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEETS.ACTIVITY_LOG);
     
+    // Format: Timestamp, User Email, Action, Description
     const logEntry = [
       new Date(),
       details.user || 'System',
       category,
-      description,
-      JSON.stringify(details)
+      `${description} | Details: ${JSON.stringify(details)}`
     ];
     
     activitySheet.appendRow(logEntry);
