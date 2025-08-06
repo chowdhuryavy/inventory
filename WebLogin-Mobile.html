@@ -236,7 +236,7 @@
         .login-btn {
             width: 100%;
             padding: 0.875rem;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
             color: white;
             border: none;
             border-radius: 0.5rem;
@@ -244,15 +244,14 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
             -webkit-appearance: none;
             appearance: none;
         }
 
-        .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        .login-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #4338ca, #6d28d9);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
         }
 
         .login-btn:active {
@@ -260,7 +259,7 @@
         }
 
         .login-btn:disabled {
-            opacity: 0.6;
+            opacity: 0.7;
             cursor: not-allowed;
             transform: none;
         }
@@ -275,6 +274,21 @@
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
+        }
+
+        .btn-spinner {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .spinner-small {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
 
         .loading {
@@ -485,15 +499,13 @@
                 </div>
                 
                 <button type="submit" class="login-btn" id="loginBtn">
-                    <div class="btn-content">
-                        <span>🚀 Sign In</span>
+                    <div class="btn-content" id="btnContent">
+                        <span id="btnText">Sign In</span>
+                        <div class="btn-spinner" id="btnSpinner" style="display: none;">
+                            <div class="spinner-small"></div>
+                        </div>
                     </div>
                 </button>
-                
-                <div class="loading" id="loadingDiv">
-                    <div class="spinner"></div>
-                    <span>Signing you in...</span>
-                </div>
                 
                 <div class="forgot-password">
                     <a href="#" onclick="forgotPassword()" class="forgot-link">🔑 Forgot Password?</a>
@@ -592,7 +604,7 @@
                 console.log('Response keys:', Object.keys(result));
                 
                 if (result.success) {
-                    showSuccess('Login successful! Redirecting...');
+                    showSuccess('Login successful! Loading workspace...');
                     
                     if (rememberMe) {
                         saveCredentials(email);
@@ -600,14 +612,10 @@
                         clearSavedCredentials();
                     }
                     
-                    // Redirect after short delay
+                    // Redirect to loading page first, then to dashboard
                     setTimeout(() => {
-                        if (result.redirectUrl) {
-                            window.location.href = result.redirectUrl;
-                        } else {
-                            // Fallback redirect
-                            window.location.href = `${appUrl}?page=dashboard&sessionToken=${result.sessionToken}`;
-                        }
+                        const targetUrl = encodeURIComponent(`${appUrl}?page=dashboard&sessionToken=${result.sessionToken}`);
+                        window.location.href = `${appUrl}?page=loading&targetUrl=${targetUrl}`;
                     }, 1000);
                 } else {
                     let errorMsg = result.error || result.message || 'Login failed';
@@ -651,14 +659,17 @@
 
         function setLoading(loading) {
             const loginBtn = document.getElementById('loginBtn');
-            const loadingDiv = document.getElementById('loadingDiv');
+            const btnText = document.getElementById('btnText');
+            const btnSpinner = document.getElementById('btnSpinner');
             
             if (loading) {
                 loginBtn.disabled = true;
-                loadingDiv.classList.add('show');
+                btnText.style.display = 'none';
+                btnSpinner.style.display = 'flex';
             } else {
                 loginBtn.disabled = false;
-                loadingDiv.classList.remove('show');
+                btnText.style.display = 'block';
+                btnSpinner.style.display = 'none';
             }
         }
 
