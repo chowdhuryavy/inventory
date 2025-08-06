@@ -305,6 +305,23 @@
             100% { transform: rotate(360deg); }
         }
 
+        .forgot-password {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .forgot-link {
+            color: #4299e1;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .forgot-link:hover {
+            color: #3182ce;
+            text-decoration: underline;
+        }
+
         .footer {
             text-align: center;
             padding: 1.5rem;
@@ -476,6 +493,10 @@
                 <div class="loading" id="loadingDiv">
                     <div class="spinner"></div>
                     <span>Signing you in...</span>
+                </div>
+                
+                <div class="forgot-password">
+                    <a href="#" onclick="forgotPassword()" class="forgot-link">🔑 Forgot Password?</a>
                 </div>
             </form>
         </div>
@@ -697,6 +718,36 @@
             } catch (e) {
                 console.log('Cannot clear localStorage');
             }
+        }
+
+        /**
+         * Handle forgot password
+         */
+        function forgotPassword() {
+            const email = document.getElementById('email').value.trim();
+            
+            if (!email) {
+                showError('Please enter your email address first, then click "Forgot Password"');
+                document.getElementById('email').focus();
+                return;
+            }
+            
+            if (!isValidEmail(email)) {
+                showError('Please enter a valid email address');
+                document.getElementById('email').focus();
+                return;
+            }
+            
+            // Show confirmation message
+            const message = `Password reset instructions will be sent to: ${email}\n\nNote: Contact your system administrator to reset your password, as automated email reset is not yet implemented.`;
+            
+            if (confirm(message)) {
+                showSuccess('Please contact your system administrator to reset your password. Your email: ' + email);
+            }
+        }
+
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
         }
 
         // Enhanced error handling for debugging

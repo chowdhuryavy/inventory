@@ -17,6 +17,8 @@ function doGet(e) {
   switch (page) {
     case 'login':
       return showLoginPage();
+    case 'loading':
+      return showLoadingPage(e.parameter.targetUrl);
     case 'dashboard':
       return showWebDashboard(e);
     case 'inventory':
@@ -92,6 +94,9 @@ function doPost(e) {
         break;
       case 'getReports':
         result = handleGetReports(e);
+        break;
+      case 'resetPassword':
+        result = handleResetPassword(e);
         break;
       default:
         result = { success: false, error: 'Unknown action' };
@@ -261,6 +266,78 @@ function showWebReports(e) {
   
   return template.evaluate()
     .setTitle(`${settings.companyName} - Reports`)
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/**
+ * Handle password reset request
+ */
+function handleResetPassword(e) {
+  try {
+    const email = e.parameter.email;
+    
+    if (!email) {
+      return { success: false, error: 'Email is required' };
+    }
+    
+    // Check if user exists
+    const usersSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+    if (!usersSheet) {
+      return { success: false, error: 'Users sheet not found' };
+    }
+    
+    const data = usersSheet.getDataRange().getValues();
+    let userFound = false;
+    
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] === email) {
+        userFound = true;
+        break;
+      }
+    }
+    
+    if (!userFound) {
+      return { success: false, error: 'Email not found in system' };
+    }
+    
+    // Log the password reset request
+    logDetailedActivity('Password Reset Request', `Password reset requested for: ${email}`, {
+      email: email,
+      timestamp: new Date(),
+      userAgent: e.parameter.userAgent || 'Unknown'
+    });
+    
+    // For now, just return success with instruction to contact admin
+    return {
+      success: true,
+      message: 'Password reset request received. Please contact your system administrator to reset your password.',
+      email: email
+    };
+    
+  } catch (error) {
+    console.error('Password reset error:', error);
+    return {
+      success: false,
+      error: 'Password reset system error: ' + error.toString()
+    };
+  }
+}
+
+/**
+ * Show loading page with company branding
+ */
+function showLoadingPage(targetUrl) {
+  const settings = getCompanySettings();
+  
+  const template = HtmlService.createTemplateFromFile('WebLoading');
+  template.appUrl = ScriptApp.getService().getUrl();
+  template.targetUrl = targetUrl || `${ScriptApp.getService().getUrl()}?page=dashboard`;
+  template.companyName = settings.companyName;
+  template.slogan = settings.slogan;
+  template.logo = settings.logo;
+  
+  return template.evaluate()
+    .setTitle(`${settings.companyName} - Loading`)
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
