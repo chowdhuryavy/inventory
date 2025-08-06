@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title><?= typeof companyName !== 'undefined' ? companyName : 'Inventory System' ?> - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #1a202c;
+            min-height: 100vh;
+            font-size: 14px;
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: #1a202c;
+            color: white;
+            padding: 0;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #2d3748;
+            text-align: center;
+        }
+
+        .company-logo {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .company-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .company-slogan {
+            font-size: 0.8rem;
+            color: #a0aec0;
+        }
+
+        .sidebar-nav {
+            padding: 1rem 0;
+        }
+
+        .nav-item {
+            margin: 0.25rem 0;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: #e2e8f0;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-link:hover {
+            background: #2d3748;
+            border-left-color: #4299e1;
+            color: white;
+        }
+
+        .nav-link.active {
+            background: #2d3748;
+            border-left-color: #4299e1;
+            color: white;
+        }
+
+        .nav-link i {
+            width: 20px;
+            margin-right: 0.75rem;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #2d3748;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: #4299e1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.75rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .user-role {
+            font-size: 0.75rem;
+            color: #a0aec0;
+        }
+
+        .logout-btn {
+            width: 100%;
+            background: #e53e3e;
+            color: white;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background 0.2s ease;
+        }
+
+        .logout-btn:hover {
+            background: #c53030;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            color: #718096;
+            font-size: 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        .stat-header {
+            display: flex;
+            items-center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .stat-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .stat-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .stat-icon.blue {
+            background: #ebf8ff;
+            color: #3182ce;
+        }
+
+        .stat-icon.green {
+            background: #f0fff4;
+            color: #38a169;
+        }
+
+        .stat-icon.yellow {
+            background: #fffbeb;
+            color: #d69e2e;
+        }
+
+        .stat-icon.red {
+            background: #fed7d7;
+            color: #e53e3e;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-change {
+            font-size: 0.875rem;
+            color: #718096;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 1rem;
+        }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .action-btn {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .action-btn:hover {
+            border-color: #4299e1;
+            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .action-btn i {
+            font-size: 1.5rem;
+            color: #4299e1;
+        }
+
+        .action-btn span {
+            font-weight: 500;
+            color: #1a202c;
+        }
+
+        /* Mobile Responsive */
+        .mobile-header {
+            display: none;
+            background: white;
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1001;
+        }
+
+        .mobile-menu-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #4a5568;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding-top: 5rem;
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            .mobile-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .actions-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #4299e1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+        <h1><?= typeof companyName !== 'undefined' ? companyName : 'Inventory System' ?></h1>
+        <div></div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="company-logo"><?= typeof logo !== 'undefined' ? logo : '📦' ?></div>
+            <div class="company-name"><?= typeof companyName !== 'undefined' ? companyName : 'Inventory System' ?></div>
+            <div class="company-slogan"><?= typeof slogan !== 'undefined' ? slogan : 'Professional Inventory Management' ?></div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-item">
+                <a href="#" class="nav-link active" onclick="showDashboard()">
+                    <i>📊</i>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="#" class="nav-link" onclick="showInventory()">
+                    <i>📦</i>
+                    <span>Inventory</span>
+                </a>
+            </div>
+            <div class="nav-item" id="usersNavItem" style="display: none;">
+                <a href="#" class="nav-link" onclick="showUsers()">
+                    <i>👥</i>
+                    <span>Users</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="#" class="nav-link" onclick="showReports()">
+                    <i>📋</i>
+                    <span>Reports</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="#" class="nav-link" onclick="showSettings()">
+                    <i>⚙️</i>
+                    <span>Settings</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar"><?= user.name ? user.name.charAt(0).toUpperCase() : 'U' ?></div>
+                <div class="user-details">
+                    <div class="user-name"><?= user.name || 'User' ?></div>
+                    <div class="user-role"><?= user.role || 'Role' ?></div>
+                </div>
+            </div>
+            <button class="logout-btn" onclick="logout()">Sign Out</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">Welcome back, <?= user.name || 'User' ?>. Here's what's happening with your inventory.</p>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-title">Total Items</div>
+                        <div class="stat-value" id="totalItems">-</div>
+                        <div class="stat-change">In inventory</div>
+                    </div>
+                    <div class="stat-icon blue">📦</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-title">Low Stock</div>
+                        <div class="stat-value" id="lowStock">-</div>
+                        <div class="stat-change">Items need restocking</div>
+                    </div>
+                    <div class="stat-icon yellow">⚠️</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-title">Expiring Soon</div>
+                        <div class="stat-value" id="expiringSoon">-</div>
+                        <div class="stat-change">Within 30 days</div>
+                    </div>
+                    <div class="stat-icon red">📅</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-title">Total Value</div>
+                        <div class="stat-value" id="totalValue">-</div>
+                        <div class="stat-change">Inventory worth</div>
+                    </div>
+                    <div class="stat-icon green">💰</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <h2 class="section-title">Quick Actions</h2>
+            <div class="actions-grid">
+                <div class="action-btn" onclick="showInventory()">
+                    <i>📦</i>
+                    <span>Manage Inventory</span>
+                </div>
+                <div class="action-btn" onclick="addNewItem()">
+                    <i>➕</i>
+                    <span>Add New Item</span>
+                </div>
+                <div class="action-btn" onclick="showReports()">
+                    <i>📊</i>
+                    <span>View Reports</span>
+                </div>
+                <div class="action-btn" onclick="showLowStock()">
+                    <i>⚠️</i>
+                    <span>Low Stock Alert</span>
+                </div>
+                <div class="action-btn" onclick="showExpiring()">
+                    <i>📅</i>
+                    <span>Expiring Items</span>
+                </div>
+                <div class="action-btn" onclick="viewLogs()">
+                    <i>📋</i>
+                    <span>Activity Logs</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        const userRole = '<?= user.role ?>';
+        const sessionToken = '<?= sessionToken ?>';
+        const appUrl = '<?= appUrl ?>';
+
+        // Show/hide user management based on role
+        if (userRole === 'Super Admin' || userRole === 'Admin') {
+            document.getElementById('usersNavItem').style.display = 'block';
+        }
+
+        // Load dashboard data on page load
+        window.onload = function() {
+            loadDashboardData();
+        };
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        function setActiveNavItem(clickedLink) {
+            // Remove active class from all nav links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            // Add active class to clicked link
+            clickedLink.classList.add('active');
+        }
+
+        function showLoading(show) {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.style.display = show ? 'flex' : 'none';
+        }
+
+        function loadDashboardData() {
+            showLoading(true);
+            
+            fetch(appUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `action=getDashboardData&sessionToken=${sessionToken}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                showLoading(false);
+                
+                if (data.success) {
+                    updateStats(data.stats);
+                } else {
+                    console.error('Failed to load dashboard data:', data.error);
+                    updateStats({
+                        totalItems: '?',
+                        lowStock: '?',
+                        expiringSoon: '?',
+                        totalValue: '?'
+                    });
+                }
+            })
+            .catch(error => {
+                showLoading(false);
+                console.error('Error loading dashboard data:', error);
+                updateStats({
+                    totalItems: 'Error',
+                    lowStock: 'Error',
+                    expiringSoon: 'Error',
+                    totalValue: 'Error'
+                });
+            });
+        }
+
+        function updateStats(stats) {
+            document.getElementById('totalItems').textContent = stats.totalItems || '0';
+            document.getElementById('lowStock').textContent = stats.lowStock || '0';
+            document.getElementById('expiringSoon').textContent = stats.expiringSoon || '0';
+            document.getElementById('totalValue').textContent = stats.totalValue || '$0';
+        }
+
+        // Navigation functions
+        function showDashboard() {
+            // Already on dashboard, just highlight nav
+            setActiveNavItem(event.target.closest('.nav-link'));
+        }
+
+        function showInventory() {
+            window.location.href = `${appUrl}?page=inventory&sessionToken=${sessionToken}`;
+        }
+
+        function showUsers() {
+            if (userRole === 'Super Admin' || userRole === 'Admin') {
+                window.location.href = `${appUrl}?page=users&sessionToken=${sessionToken}`;
+            } else {
+                alert('You do not have permission to manage users.');
+            }
+        }
+
+        function showReports() {
+            window.location.href = `${appUrl}?page=reports&sessionToken=${sessionToken}`;
+        }
+
+        function showSettings() {
+            alert('Settings page coming soon!');
+        }
+
+        function addNewItem() {
+            window.location.href = `${appUrl}?page=inventory&sessionToken=${sessionToken}&action=add`;
+        }
+
+        function showLowStock() {
+            window.location.href = `${appUrl}?page=reports&sessionToken=${sessionToken}&tab=lowstock`;
+        }
+
+        function showExpiring() {
+            window.location.href = `${appUrl}?page=reports&sessionToken=${sessionToken}&tab=expiring`;
+        }
+
+        function viewLogs() {
+            window.location.href = `${appUrl}?page=reports&sessionToken=${sessionToken}&tab=activity`;
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to sign out?')) {
+                fetch(appUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `action=logout&sessionToken=${sessionToken}`
+                })
+                .then(() => {
+                    window.location.href = appUrl;
+                })
+                .catch(error => {
+                    console.error('Logout error:', error);
+                    window.location.href = appUrl;
+                });
+            }
+        }
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !mobileMenuBtn.contains(event.target) &&
+                sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+            }
+        });
+    </script>
+</body>
+</html>

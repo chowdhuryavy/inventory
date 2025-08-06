@@ -1,0 +1,1172 @@
+/**
+ * Standalone Web Application for Inventory Management
+ * Users access via web URL, no direct Google Sheet access needed
+ * Complete logging of all user interactions
+ */
+
+/**
+ * Main web app entry point
+ */
+function doGet(e) {
+  // Check if user is trying to access a specific page
+  const page = e.parameter.page || 'login';
+  
+  // Log the access attempt
+  logWebAccess(e);
+  
+  switch (page) {
+    case 'login':
+      return showLoginPage();
+    case 'loading':
+      return showLoadingPage(e.parameter.targetUrl);
+    case 'debug':
+      return showDebugPage();
+    case 'dashboard':
+      return showWebDashboard(e);
+    case 'inventory':
+      return showWebInventory(e);
+    case 'users':
+      return showWebUsers(e);
+    case 'reports':
+      return showWebReports(e);
+    default:
+      return showLoginPage();
+  }
+}
+
+/**
+ * Handle POST requests (form submissions, AJAX calls)
+ */
+function doPost(e) {
+  const action = e.parameter.action;
+  const sessionToken = e.parameter.sessionToken;
+  
+  // Log the action attempt
+  logWebAction(e);
+  
+  // Verify session for protected actions
+  if (action !== 'login' && !verifySession(sessionToken)) {
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: false,
+        error: 'Invalid session. Please login again.',
+        redirect: 'login'
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  try {
+    let result;
+    switch (action) {
+      case 'login':
+        result = handleWebLogin(e);
+        break;
+      case 'logout':
+        result = handleWebLogout(e);
+        break;
+      case 'getInventory':
+        result = handleGetInventory(e);
+        break;
+      case 'addInventory':
+        result = handleAddInventory(e);
+        break;
+      case 'updateInventory':
+        result = handleUpdateInventory(e);
+        break;
+      case 'deleteInventory':
+        result = handleDeleteInventory(e);
+        break;
+      case 'updateStock':
+        result = handleUpdateStock(e);
+        break;
+      case 'getUsers':
+        result = handleGetUsers(e);
+        break;
+      case 'addUser':
+        result = handleAddUser(e);
+        break;
+      case 'updateUser':
+        result = handleUpdateUser(e);
+        break;
+      case 'deleteUser':
+        result = handleDeleteUser(e);
+        break;
+      case 'getDashboardData':
+        result = handleGetDashboardData(e);
+        break;
+      case 'getReports':
+        result = handleGetReports(e);
+        break;
+      case 'resetPassword':
+        result = handleResetPassword(e);
+        break;
+      default:
+        result = { success: false, error: 'Unknown action' };
+    }
+    
+    // Log the result
+    logActionResult(action, result, e);
+    
+    return ContentService
+      .createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    const errorResult = { success: false, error: error.toString() };
+    logActionResult(action, errorResult, e);
+    
+    return ContentService
+      .createTextOutput(JSON.stringify(errorResult))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+/**
+ * Show login page
+ */
+function showLoginPage() {
+  try {
+    const template = HtmlService.createTemplateFromFile('WebLogin-Mobile');
+    template.appUrl = ScriptApp.getService().getUrl();
+    
+    // Ensure Settings sheet exists and has data
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let settingsSheet = ss.getSheetByName('Settings');
+    
+    if (!settingsSheet) {
+      console.log('Settings sheet not found, creating...');
+      settingsSheet = createSettingsSheet(ss);
+    }
+    
+    // Check if has data
+    const lastRow = settingsSheet.getLastRow();
+    console.log('Settings sheet last row:', lastRow);
+    
+    if (lastRow < 2) {
+      console.log('No data in Settings sheet, adding defaults...');
+      const defaultData = [['Your Company Name', 'Professional Inventory Management', '🏢']];
+      settingsSheet.getRange(2, 1, 1, 3).setValues(defaultData);
+    }
+    
+    // Get company settings
+    const settings = getCompanySettings();
+    console.log('Company settings loaded:', settings);
+    
+    template.companyName = settings.companyName;
+    template.slogan = settings.slogan;
+    template.logo = settings.logo;
+    
+    console.log('Template variables set:', {
+      companyName: template.companyName,
+      slogan: template.slogan,
+      logo: template.logo
+    });
+    
+    return template.evaluate()
+      .setTitle(`${settings.companyName} - Login`)
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  } catch (error) {
+    console.error('Error in showLoginPage:', error);
+    // Fallback if settings fail
+    const template = HtmlService.createTemplateFromFile('WebLogin-Mobile');
+    template.appUrl = ScriptApp.getService().getUrl();
+    template.companyName = 'Inventory System';
+    template.slogan = 'Professional Management';
+    template.logo = '📦';
+    
+    return template.evaluate()
+      .setTitle('Inventory System - Login')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+}
+
+/**
+ * Show web dashboard
+ */
+function showWebDashboard(e) {
+  try {
+    console.log('showWebDashboard called with parameters:', e.parameter);
+    
+    const sessionToken = e.parameter.sessionToken;
+    
+    if (!verifySession(sessionToken)) {
+      console.log('Session verification failed, redirecting to login');
+      return showLoginPage();
+    }
+    
+    const session = getSessionData(sessionToken);
+    console.log('Session data retrieved:', session ? 'Success' : 'Failed');
+    
+    if (!session || !session.user) {
+      console.log('No valid session data, redirecting to login');
+      return showLoginPage();
+    }
+    
+    // Ensure Settings sheet exists and has data  
+    console.log('Checking Settings sheet...');
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let settingsSheet = ss.getSheetByName('Settings');
+    
+    if (!settingsSheet) {
+      console.log('Settings sheet not found, creating...');
+      settingsSheet = createSettingsSheet(ss);
+    }
+    
+    const lastRow = settingsSheet.getLastRow();
+    console.log('Settings sheet last row:', lastRow);
+    
+    if (lastRow < 2) {
+      console.log('No data in Settings sheet, adding defaults...');
+      const defaultData = [['Your Company Name', 'Professional Inventory Management', '🏢']];
+      settingsSheet.getRange(2, 1, 1, 3).setValues(defaultData);
+    }
+    
+    // Get company settings with detailed logging
+    console.log('Fetching company settings...');
+    const settings = getCompanySettings();
+    console.log('Company settings retrieved:', settings);
+    
+    console.log('Creating template...');
+    const template = HtmlService.createTemplateFromFile('WebDashboard');
+    
+    // Set template variables with logging
+    template.user = session.user;
+    template.sessionToken = sessionToken;
+    template.appUrl = ScriptApp.getService().getUrl();
+    template.companyName = settings.companyName || 'Inventory System';
+    template.slogan = settings.slogan || 'Professional Management';
+    template.logo = settings.logo || '📦';
+    
+    console.log('Template variables set:', {
+      userEmail: session.user.email,
+      userName: session.user.name,
+      userRole: session.user.role,
+      companyName: template.companyName,
+      slogan: template.slogan,
+      logo: template.logo,
+      appUrl: template.appUrl
+    });
+    
+    const result = template.evaluate()
+      .setTitle(`Dashboard - ${template.companyName}`)
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    
+    console.log('Dashboard template evaluation successful');
+    return result;
+    
+  } catch (error) {
+    console.error('Error in showWebDashboard:', error);
+    console.error('Error stack:', error.stack);
+    
+    // Return simple fallback HTML
+    const fallbackHtml = `
+      <html>
+        <body>
+          <h1>Dashboard Error</h1>
+          <p>There was an error loading the dashboard. Please try refreshing the page.</p>
+          <p>Error: ${error.message}</p>
+          <a href="${ScriptApp.getService().getUrl()}">Return to Login</a>
+        </body>
+      </html>
+    `;
+    
+    return HtmlService.createHtml(fallbackHtml)
+      .setTitle('Dashboard Error')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+}
+
+/**
+ * Show web inventory management
+ */
+function showWebInventory(e) {
+  const sessionToken = e.parameter.sessionToken;
+  
+  if (!verifySession(sessionToken)) {
+    return showLoginPage();
+  }
+  
+  const session = getSessionData(sessionToken);
+  
+  // Check permissions
+  if (!hasWebPermission(session.user, 'view_inventory')) {
+    return showAccessDeniedPage();
+  }
+  
+  const template = HtmlService.createTemplateFromFile('WebInventory');
+  template.user = session.user;
+  template.sessionToken = sessionToken;
+  template.appUrl = ScriptApp.getService().getUrl();
+  
+  return template.evaluate()
+    .setTitle('Inventory Management')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/**
+ * Show web user management
+ */
+function showWebUsers(e) {
+  const sessionToken = e.parameter.sessionToken;
+  
+  if (!verifySession(sessionToken)) {
+    return showLoginPage();
+  }
+  
+  const session = getSessionData(sessionToken);
+  
+  // Check permissions
+  if (!hasWebPermission(session.user, 'manage_users')) {
+    return showAccessDeniedPage();
+  }
+  
+  const template = HtmlService.createTemplateFromFile('WebUsers');
+  template.user = session.user;
+  template.sessionToken = sessionToken;
+  template.appUrl = ScriptApp.getService().getUrl();
+  
+  return template.evaluate()
+    .setTitle('User Management')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/**
+ * Show web reports page
+ */
+function showWebReports(e) {
+  const sessionToken = e.parameter.sessionToken;
+  
+  if (!verifySession(sessionToken)) {
+    return showLoginPage();
+  }
+  
+  const session = getSessionData(sessionToken);
+  
+  // Get company settings
+  const settings = getCompanySettings();
+  
+  const template = HtmlService.createTemplateFromFile('WebReports');
+  template.user = session.user;
+  template.sessionToken = sessionToken;
+  template.appUrl = ScriptApp.getService().getUrl();
+  template.companyName = settings.companyName;
+  template.slogan = settings.slogan;
+  template.logo = settings.logo;
+  
+  return template.evaluate()
+    .setTitle(`${settings.companyName} - Reports`)
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/**
+ * Handle get dashboard data request
+ */
+function handleGetDashboardData(e) {
+  try {
+    const sessionToken = e.parameter.sessionToken;
+    
+    if (!verifySession(sessionToken)) {
+      return { success: false, error: 'Invalid session' };
+    }
+    
+    // Get dashboard statistics
+    const inventorySheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Inventory');
+    if (!inventorySheet) {
+      return { success: false, error: 'Inventory sheet not found' };
+    }
+    
+    const data = inventorySheet.getDataRange().getValues();
+    const headers = data[0];
+    const rows = data.slice(1);
+    
+    // Calculate statistics
+    let totalItems = rows.length;
+    let lowStock = 0;
+    let expiringSoon = 0;
+    let totalValue = 0;
+    
+    const today = new Date();
+    const thirtyDaysFromNow = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
+    
+    rows.forEach(row => {
+      // Find column indices
+      const quantityIdx = headers.indexOf('Quantity');
+      const minStockIdx = headers.indexOf('Min Stock Level');
+      const priceIdx = headers.indexOf('Unit Price');
+      const expiryIdx = headers.indexOf('Expiry Date');
+      
+      // Check low stock
+      if (quantityIdx !== -1 && minStockIdx !== -1) {
+        const quantity = parseInt(row[quantityIdx]) || 0;
+        const minStock = parseInt(row[minStockIdx]) || 0;
+        if (quantity <= minStock) {
+          lowStock++;
+        }
+      }
+      
+      // Calculate total value
+      if (quantityIdx !== -1 && priceIdx !== -1) {
+        const quantity = parseInt(row[quantityIdx]) || 0;
+        const price = parseFloat(row[priceIdx]) || 0;
+        totalValue += quantity * price;
+      }
+      
+      // Check expiring items
+      if (expiryIdx !== -1 && row[expiryIdx]) {
+        const expiryDate = new Date(row[expiryIdx]);
+        if (expiryDate <= thirtyDaysFromNow) {
+          expiringSoon++;
+        }
+      }
+    });
+    
+    return {
+      success: true,
+      stats: {
+        totalItems: totalItems,
+        lowStock: lowStock,
+        expiringSoon: expiringSoon,
+        totalValue: `$${totalValue.toFixed(2)}`
+      }
+    };
+    
+  } catch (error) {
+    console.error('Dashboard data error:', error);
+    return {
+      success: false,
+      error: 'Error loading dashboard data: ' + error.toString()
+    };
+  }
+}
+
+/**
+ * Handle password reset request
+ */
+function handleResetPassword(e) {
+  try {
+    const email = e.parameter.email;
+    
+    if (!email) {
+      return { success: false, error: 'Email is required' };
+    }
+    
+    // Check if user exists
+    const usersSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+    if (!usersSheet) {
+      return { success: false, error: 'Users sheet not found' };
+    }
+    
+    const data = usersSheet.getDataRange().getValues();
+    let userFound = false;
+    
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] === email) {
+        userFound = true;
+        break;
+      }
+    }
+    
+    if (!userFound) {
+      return { success: false, error: 'Email not found in system' };
+    }
+    
+    // Log the password reset request
+    logDetailedActivity('Password Reset Request', `Password reset requested for: ${email}`, {
+      email: email,
+      timestamp: new Date(),
+      userAgent: e.parameter.userAgent || 'Unknown'
+    });
+    
+    // For now, just return success with instruction to contact admin
+    return {
+      success: true,
+      message: 'Password reset request received. Please contact your system administrator to reset your password.',
+      email: email
+    };
+    
+  } catch (error) {
+    console.error('Password reset error:', error);
+    return {
+      success: false,
+      error: 'Password reset system error: ' + error.toString()
+    };
+  }
+}
+
+/**
+ * Show debug page to test settings
+ */
+function showDebugPage() {
+  try {
+    console.log('showDebugPage called');
+    
+    // Force ensure Settings sheet exists
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let settingsSheet = ss.getSheetByName('Settings');
+    
+    if (!settingsSheet) {
+      console.log('Creating Settings sheet for debug...');
+      settingsSheet = createSettingsSheet(ss);
+    }
+    
+    const lastRow = settingsSheet.getLastRow();
+    if (lastRow < 2) {
+      console.log('Adding debug data to Settings sheet...');
+      const defaultData = [['Debug Company', 'Debug Slogan Test', '🔧']];
+      settingsSheet.getRange(2, 1, 1, 3).setValues(defaultData);
+    }
+    
+    const settings = getCompanySettings();
+    console.log('Debug - company settings:', settings);
+    
+    const template = HtmlService.createTemplateFromFile('DebugSettings');
+    template.appUrl = ScriptApp.getService().getUrl();
+    template.companyName = settings.companyName;
+    template.slogan = settings.slogan;
+    template.logo = settings.logo;
+    
+    return template.evaluate()
+      .setTitle('Settings Debug')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+      
+  } catch (error) {
+    console.error('Error in showDebugPage:', error);
+    return HtmlService.createHtml(`<h1>Debug Error</h1><p>${error.message}</p>`);
+  }
+}
+
+/**
+ * Show loading page with company branding
+ */
+function showLoadingPage(targetUrl) {
+  const settings = getCompanySettings();
+  
+  const template = HtmlService.createTemplateFromFile('WebLoading');
+  template.appUrl = ScriptApp.getService().getUrl();
+  template.targetUrl = targetUrl || `${ScriptApp.getService().getUrl()}?page=dashboard`;
+  template.companyName = settings.companyName;
+  template.slogan = settings.slogan;
+  template.logo = settings.logo;
+  
+  return template.evaluate()
+    .setTitle(`${settings.companyName} - Loading`)
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/**
+ * Show access denied page
+ */
+function showAccessDeniedPage() {
+  const template = HtmlService.createTemplateFromFile('WebAccessDenied');
+  template.appUrl = ScriptApp.getService().getUrl();
+  
+  return template.evaluate()
+    .setTitle('Access Denied')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/**
+ * Handle web login
+ */
+function handleWebLogin(e) {
+  try {
+    const email = e.parameter.email;
+    const password = e.parameter.password;
+    
+    if (!email || !password) {
+      return {
+        success: false,
+        error: 'Email and password are required'
+      };
+    }
+    
+    // Validate credentials
+    const result = validateWebCredentials(email, password);
+    
+    if (!result || !result.success) {
+      const errorMessage = result?.error || 'Invalid email or password';
+      
+      logDetailedActivity('Login Failed', `Failed login for email: ${email}`, {
+        email: email,
+        reason: errorMessage
+      });
+      
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+    
+    const user = result.user;
+    
+    // Create session
+    const sessionToken = createSession(user);
+    
+    logDetailedActivity('Login Success', `Successful login for: ${user.name}`, {
+      email: user.email,
+      role: user.role,
+      sessionToken: sessionToken
+    });
+    
+    return {
+      success: true,
+      sessionToken: sessionToken,
+      user: {
+        email: user.email,
+        name: user.name,
+        role: user.role
+      },
+      redirectUrl: `${ScriptApp.getService().getUrl()}?page=dashboard&sessionToken=${sessionToken}`
+    };
+      
+  } catch (error) {
+    console.error('Login error:', error);
+    return {
+      success: false,
+      error: 'Login system error: ' + error.toString()
+    };
+  }
+}
+
+/**
+ * Handle web logout
+ */
+function handleWebLogout(e) {
+  const sessionToken = e.parameter.sessionToken;
+  
+  if (sessionToken) {
+    const session = getSessionData(sessionToken);
+    if (session) {
+      logDetailedActivity('Logout', `User logged out: ${session.user.name}`, {
+        email: session.user.email,
+        sessionToken: sessionToken
+      });
+    }
+    
+    destroySession(sessionToken);
+  }
+  
+  return { 
+    success: true, 
+    redirectUrl: `${ScriptApp.getService().getUrl()}?page=login`
+  };
+}
+
+/**
+ * Validate web credentials
+ */
+function validateWebCredentials(email, password) {
+  try {
+    const usersSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+    if (!usersSheet) {
+      return { error: 'Users sheet not found' };
+    }
+    
+    const lastRow = usersSheet.getLastRow();
+    if (lastRow < 2) {
+      return { error: 'No users found in system' };
+    }
+    
+    // Get all user data
+    const data = usersSheet.getRange(2, 1, lastRow - 1, 6).getValues();
+    
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      
+      if (row[0] === email) {
+        // Check if user is active
+        if (row[4] !== 'Active') {
+          return { error: 'Account is not active' };
+        }
+        
+        // Check password
+        const storedPassword = row[2];
+        
+        if (storedPassword === password) {
+          return {
+            success: true,
+            user: {
+              email: row[0],      // Email
+              name: row[1],       // Name
+              role: row[3],       // Role (column D)
+              status: row[4],     // Status (column E)
+              dateAdded: row[5]   // Date Added (column F)
+            }
+          };
+        } else {
+          return { error: 'Invalid password' };
+        }
+      }
+    }
+    
+    return { error: 'Email not found' };
+    
+  } catch (error) {
+    return { error: error.toString() };
+  }
+}
+
+/**
+ * Session management functions
+ */
+function createSession(user) {
+  const sessionToken = Utilities.getUuid();
+  const sessionData = {
+    user: user,
+    createdAt: new Date(),
+    lastAccess: new Date(),
+    ipAddress: 'unknown' // You could capture this from the request
+  };
+  
+  // Store session in PropertiesService (temporary storage)
+  PropertiesService.getScriptProperties().setProperty(
+    `session_${sessionToken}`, 
+    JSON.stringify(sessionData)
+  );
+  
+  // Also log session creation
+  logSessionActivity('Session Created', sessionToken, user);
+  
+  return sessionToken;
+}
+
+function verifySession(sessionToken) {
+  if (!sessionToken) return false;
+  
+  try {
+    const sessionData = PropertiesService.getScriptProperties().getProperty(`session_${sessionToken}`);
+    if (!sessionData) return false;
+    
+    const session = JSON.parse(sessionData);
+    const now = new Date();
+    const sessionAge = now - new Date(session.createdAt);
+    
+    // Session expires after 8 hours
+    if (sessionAge > 8 * 60 * 60 * 1000) {
+      destroySession(sessionToken);
+      return false;
+    }
+    
+    // Update last access
+    session.lastAccess = now;
+    PropertiesService.getScriptProperties().setProperty(
+      `session_${sessionToken}`, 
+      JSON.stringify(session)
+    );
+    
+    return true;
+  } catch (error) {
+    console.error('Error verifying session:', error);
+    return false;
+  }
+}
+
+function getSessionData(sessionToken) {
+  try {
+    const sessionData = PropertiesService.getScriptProperties().getProperty(`session_${sessionToken}`);
+    return sessionData ? JSON.parse(sessionData) : null;
+  } catch (error) {
+    console.error('Error getting session data:', error);
+    return null;
+  }
+}
+
+function destroySession(sessionToken) {
+  PropertiesService.getScriptProperties().deleteProperty(`session_${sessionToken}`);
+  
+  // Log session destruction
+  logSessionActivity('Session Destroyed', sessionToken);
+}
+
+/**
+ * Enhanced logging functions
+ */
+function logWebAccess(e) {
+  const details = {
+    page: e.parameter.page || 'login',
+    userAgent: e.parameter.userAgent || 'Unknown',
+    timestamp: new Date(),
+    parameters: JSON.stringify(e.parameter)
+  };
+  
+  logDetailedActivity('Web Access', `Page access: ${details.page}`, details);
+}
+
+function logWebAction(e) {
+  const details = {
+    action: e.parameter.action,
+    sessionToken: e.parameter.sessionToken ? 'Present' : 'Missing',
+    timestamp: new Date(),
+    parameterCount: Object.keys(e.parameter).length
+  };
+  
+  logDetailedActivity('Web Action', `Action: ${details.action}`, details);
+}
+
+function logActionResult(action, result, e) {
+  const session = e.parameter.sessionToken ? getSessionData(e.parameter.sessionToken) : null;
+  const user = session ? session.user : null;
+  
+  const details = {
+    action: action,
+    success: result.success,
+    user: user ? user.email : 'Anonymous',
+    timestamp: new Date(),
+    error: result.error || null
+  };
+  
+  logDetailedActivity('Action Result', `${action}: ${result.success ? 'Success' : 'Failed'}`, details);
+}
+
+function logSessionActivity(action, sessionToken, user = null) {
+  const details = {
+    sessionToken: sessionToken.substring(0, 8) + '...',
+    user: user ? user.email : 'Unknown',
+    timestamp: new Date()
+  };
+  
+  logDetailedActivity('Session Activity', action, details);
+}
+
+function logDetailedActivity(category, description, details = {}) {
+  try {
+    const activitySheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEETS.ACTIVITY_LOG);
+    
+    // Format: Timestamp, User Email, Action, Description
+    const logEntry = [
+      new Date(),
+      details.user || 'System',
+      category,
+      `${description} | Details: ${JSON.stringify(details)}`
+    ];
+    
+    activitySheet.appendRow(logEntry);
+  } catch (error) {
+    console.error('Error logging detailed activity:', error);
+  }
+}
+
+/**
+ * Enhanced permission checking for web app
+ */
+function hasWebPermission(user, permission) {
+  const permissions = getUserPermissions(user.role);
+  return permissions[permission] || false;
+}
+
+/**
+ * Simple password storage (in production, use proper encryption)
+ */
+function getStoredPassword(email) {
+  return PropertiesService.getScriptProperties().getProperty(`pwd_${email}`);
+}
+
+function setStoredPassword(email, password) {
+  // In production, hash the password properly
+  PropertiesService.getScriptProperties().setProperty(`pwd_${email}`, password);
+  logDetailedActivity('Password Set', `Password set for user: ${email}`, { email: email });
+}
+
+/**
+ * Handle get users request
+ */
+function handleGetUsers(e) {
+  try {
+    const sessionToken = e.parameter.sessionToken;
+    
+    if (!verifySession(sessionToken)) {
+      return { success: false, error: 'Invalid session' };
+    }
+    
+    const session = getSessionData(sessionToken);
+    
+    // Check permissions - only Admin and Super Admin can view users
+    if (!hasWebPermission(session.user, 'manage_users')) {
+      return { success: false, error: 'Access denied' };
+    }
+    
+    const usersSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+    if (!usersSheet) {
+      return { success: false, error: 'Users sheet not found' };
+    }
+    
+    const data = usersSheet.getDataRange().getValues();
+    const headers = data[0];
+    const rows = data.slice(1);
+    
+    const users = rows.map(row => ({
+      email: row[0] || '',
+      name: row[1] || '',
+      role: row[3] || '',
+      status: row[4] || '',
+      dateAdded: row[5] ? new Date(row[5]).toLocaleDateString() : ''
+    }));
+    
+    return {
+      success: true,
+      data: users
+    };
+    
+  } catch (error) {
+    console.error('Get users error:', error);
+    return {
+      success: false,
+      error: 'Error loading users: ' + error.toString()
+    };
+  }
+}
+
+/**
+ * Handle get reports request
+ */
+function handleGetReports(e) {
+  try {
+    const sessionToken = e.parameter.sessionToken;
+    const reportType = e.parameter.reportType;
+    
+    if (!verifySession(sessionToken)) {
+      return { success: false, error: 'Invalid session' };
+    }
+    
+    const inventorySheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Inventory');
+    const stockLogSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Stock_log');
+    const activityLogSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Activity_log');
+    
+    let reportData = [];
+    
+    switch (reportType) {
+      case 'inventory':
+        if (inventorySheet) {
+          const data = inventorySheet.getDataRange().getValues();
+          const headers = data[0];
+          reportData = data.slice(1).map(row => {
+            const obj = {};
+            headers.forEach((header, index) => {
+              obj[header] = row[index] || '';
+            });
+            return obj;
+          });
+        }
+        break;
+        
+      case 'lowstock':
+        if (inventorySheet) {
+          const data = inventorySheet.getDataRange().getValues();
+          const headers = data[0];
+          const rows = data.slice(1);
+          
+          const quantityIdx = headers.indexOf('Quantity');
+          const minStockIdx = headers.indexOf('Min Stock Level');
+          
+          reportData = rows.filter(row => {
+            const quantity = parseInt(row[quantityIdx]) || 0;
+            const minStock = parseInt(row[minStockIdx]) || 0;
+            return quantity <= minStock;
+          }).map(row => {
+            const obj = {};
+            headers.forEach((header, index) => {
+              obj[header] = row[index] || '';
+            });
+            return obj;
+          });
+        }
+        break;
+        
+      case 'expiring':
+        if (inventorySheet) {
+          const data = inventorySheet.getDataRange().getValues();
+          const headers = data[0];
+          const rows = data.slice(1);
+          
+          const expiryIdx = headers.indexOf('Expiry Date');
+          const today = new Date();
+          const thirtyDaysFromNow = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
+          
+          reportData = rows.filter(row => {
+            if (expiryIdx !== -1 && row[expiryIdx]) {
+              const expiryDate = new Date(row[expiryIdx]);
+              return expiryDate <= thirtyDaysFromNow;
+            }
+            return false;
+          }).map(row => {
+            const obj = {};
+            headers.forEach((header, index) => {
+              obj[header] = row[index] || '';
+            });
+            return obj;
+          });
+        }
+        break;
+        
+      case 'stocklog':
+        if (stockLogSheet) {
+          const data = stockLogSheet.getDataRange().getValues();
+          const headers = data[0];
+          reportData = data.slice(1).slice(-50).map(row => { // Last 50 entries
+            const obj = {};
+            headers.forEach((header, index) => {
+              obj[header] = row[index] || '';
+            });
+            return obj;
+          });
+        }
+        break;
+        
+      case 'activitylog':
+        if (activityLogSheet) {
+          const data = activityLogSheet.getDataRange().getValues();
+          const headers = data[0];
+          reportData = data.slice(1).slice(-50).map(row => { // Last 50 entries
+            const obj = {};
+            headers.forEach((header, index) => {
+              obj[header] = row[index] || '';
+            });
+            return obj;
+          });
+        }
+        break;
+        
+      default:
+        return { success: false, error: 'Unknown report type' };
+    }
+    
+    return {
+      success: true,
+      data: reportData
+    };
+    
+  } catch (error) {
+    console.error('Get reports error:', error);
+    return {
+      success: false,
+      error: 'Error generating report: ' + error.toString()
+    };
+  }
+}
+
+/**
+ * Web-specific inventory handlers
+ */
+function handleGetInventory(e) {
+  const session = getSessionData(e.parameter.sessionToken);
+  
+  if (!hasWebPermission(session.user, 'view_inventory')) {
+    return { success: false, error: 'Access denied' };
+  }
+  
+  logDetailedActivity('Inventory View', `User viewed inventory`, {
+    user: session.user.email,
+    action: 'view_inventory'
+  });
+  
+  return {
+    success: true,
+    data: getInventoryItems()
+  };
+}
+
+function handleAddInventory(e) {
+  const session = getSessionData(e.parameter.sessionToken);
+  
+  if (!hasWebPermission(session.user, 'add_inventory')) {
+    return { success: false, error: 'Access denied' };
+  }
+  
+  const itemData = JSON.parse(e.parameter.itemData);
+  
+  logDetailedActivity('Inventory Add', `User added inventory item: ${itemData.productName}`, {
+    user: session.user.email,
+    item: itemData,
+    action: 'add_inventory'
+  });
+  
+  return addInventoryItem(itemData);
+}
+
+function handleUpdateInventory(e) {
+  const session = getSessionData(e.parameter.sessionToken);
+  
+  if (!hasWebPermission(session.user, 'edit_inventory')) {
+    return { success: false, error: 'Access denied' };
+  }
+  
+  const sku = e.parameter.sku;
+  const itemData = JSON.parse(e.parameter.itemData);
+  
+  logDetailedActivity('Inventory Update', `User updated inventory item: ${sku}`, {
+    user: session.user.email,
+    sku: sku,
+    changes: itemData,
+    action: 'update_inventory'
+  });
+  
+  return updateInventoryItem(sku, itemData);
+}
+
+function handleDeleteInventory(e) {
+  const session = getSessionData(e.parameter.sessionToken);
+  
+  if (!hasWebPermission(session.user, 'delete_inventory')) {
+    return { success: false, error: 'Access denied' };
+  }
+  
+  const sku = e.parameter.sku;
+  
+  logDetailedActivity('Inventory Delete', `User deleted inventory item: ${sku}`, {
+    user: session.user.email,
+    sku: sku,
+    action: 'delete_inventory'
+  });
+  
+  return deleteInventoryItem(sku);
+}
+
+function handleUpdateStock(e) {
+  const session = getSessionData(e.parameter.sessionToken);
+  
+  if (!hasWebPermission(session.user, 'edit_inventory')) {
+    return { success: false, error: 'Access denied' };
+  }
+  
+  const sku = e.parameter.sku;
+  const quantity = parseInt(e.parameter.quantity);
+  const action = e.parameter.stockAction;
+  const remarks = e.parameter.remarks;
+  
+  logDetailedActivity('Stock Update', `User updated stock for: ${sku}`, {
+    user: session.user.email,
+    sku: sku,
+    quantity: quantity,
+    action: action,
+    remarks: remarks
+  });
+  
+  return updateStock(sku, quantity, action, remarks);
+}
+
+/**
+ * Get web app URL for deployment
+ */
+function getWebAppUrl() {
+  return ScriptApp.getService().getUrl();
+}
+
+/**
+ * Initialize web app data
+ */
+function initializeWebApp() {
+  // Make sure the basic system is initialized
+  initializeSystem();
+  
+  // Set up any web-specific configurations
+  logDetailedActivity('Web App Init', 'Web application initialized', {
+    timestamp: new Date(),
+    url: ScriptApp.getService().getUrl()
+  });
+  
+  return {
+    success: true,
+    url: ScriptApp.getService().getUrl(),
+    message: 'Web application initialized successfully'
+  };
+}

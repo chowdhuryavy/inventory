@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Settings Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .debug-info { background: #f5f5f5; padding: 20px; border-radius: 8px; }
+        .setting { margin: 10px 0; padding: 10px; background: white; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <h1>Settings Debug Page</h1>
+    
+    <div class="debug-info">
+        <h2>Template Variables:</h2>
+        
+        <div class="setting">
+            <strong>Company Name:</strong> 
+            <?= typeof companyName !== 'undefined' ? companyName : 'UNDEFINED' ?>
+        </div>
+        
+        <div class="setting">
+            <strong>Slogan:</strong> 
+            <?= typeof slogan !== 'undefined' ? slogan : 'UNDEFINED' ?>
+        </div>
+        
+        <div class="setting">
+            <strong>Logo:</strong> 
+            <?= typeof logo !== 'undefined' ? logo : 'UNDEFINED' ?>
+        </div>
+        
+        <div class="setting">
+            <strong>App URL:</strong> 
+            <?= typeof appUrl !== 'undefined' ? appUrl : 'UNDEFINED' ?>
+        </div>
+    </div>
+    
+    <h2>Raw Values:</h2>
+    <div class="debug-info">
+        <div class="setting">Company Name: "<?= companyName ?>"</div>
+        <div class="setting">Slogan: "<?= slogan ?>"</div>
+        <div class="setting">Logo: "<?= logo ?>"</div>
+        <div class="setting">App URL: "<?= appUrl ?>"</div>
+    </div>
+    
+    <a href="<?= appUrl ?>">Back to App</a>
+</body>
+</html>
