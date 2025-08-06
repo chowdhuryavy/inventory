@@ -416,12 +416,7 @@
         </div>
         
         <div class="login-body">
-            <div class="demo-info">
-                <h4>📋 Login Information</h4>
-                <p><strong>Email:</strong> <code>your-google-email@gmail.com</code></p>
-                <p><strong>Password:</strong> <code>admin123</code></p>
-                <p><small>Check Users sheet for exact credentials</small></p>
-            </div>
+
             
             <div class="alert alert-error" id="errorMessage">
                 <span>⚠️</span>
@@ -592,9 +587,22 @@
                         }
                     }, 1000);
                 } else {
-                    const errorMsg = result.error || result.message || 'Login failed';
+                    let errorMsg = result.error || result.message || 'Login failed';
+                    
+                    // Provide helpful error messages
+                    if (errorMsg.includes('Email not found')) {
+                        errorMsg = `Email "${email}" not found. Please check your email or contact admin to add you to the system.`;
+                    } else if (errorMsg.includes('Invalid password')) {
+                        errorMsg = `Incorrect password for "${email}". Please check your password or contact admin.`;
+                    } else if (errorMsg.includes('Account is not active')) {
+                        errorMsg = `Your account is not active. Please contact admin to activate your account.`;
+                    } else if (errorMsg.includes('No users found')) {
+                        errorMsg = 'System not properly configured. Please contact admin to set up user accounts.';
+                    }
+                    
                     showError(errorMsg);
-                    console.error('Login failed:', errorMsg);
+                    console.error('Login failed:', result);
+                    console.error('Full response:', result);
                 }
             } catch (error) {
                 console.error('Login error:', error);

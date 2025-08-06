@@ -34,14 +34,21 @@ function doGet(e) {
  * Handle POST requests (form submissions, AJAX calls)
  */
 function doPost(e) {
+  console.log('=== doPost called ===');
+  console.log('Parameters:', JSON.stringify(e.parameter));
+  
   const action = e.parameter.action;
   const sessionToken = e.parameter.sessionToken;
+  
+  console.log('Action:', action);
+  console.log('Session Token:', sessionToken);
   
   // Log the action attempt
   logWebAction(e);
   
   // Verify session for protected actions
   if (action !== 'login' && !verifySession(sessionToken)) {
+    console.log('Session verification failed for protected action:', action);
     return ContentService
       .createTextOutput(JSON.stringify({
         success: false,
