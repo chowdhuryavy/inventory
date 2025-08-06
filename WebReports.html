@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title><?= typeof companyName !== 'undefined' ? companyName : 'Inventory System' ?> - Reports</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            font-size: 16px;
+        }
+
+        .reports-container {
+            padding: 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .header .company-logo {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header h1 {
+            color: #4a5568;
+            margin-bottom: 5px;
+            font-size: 2rem;
+        }
+
+        .header .company-slogan {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .nav-btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            min-height: 44px;
+            min-width: 100px;
+        }
+
+        .nav-btn:hover {
+            background: #3182ce;
+            transform: translateY(-2px);
+        }
+
+        .nav-btn.back {
+            background: #38a169;
+        }
+
+        .nav-btn.back:hover {
+            background: #2f855a;
+        }
+
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .report-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .report-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .report-card h3 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+        }
+
+        .report-card .description {
+            color: #718096;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .report-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            transition: all 0.3s ease;
+            min-height: 44px;
+        }
+
+        .report-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #4299e1;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            margin: 0 auto 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .report-content {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            display: none;
+        }
+
+        .report-content.active {
+            display: block;
+        }
+
+        .report-content h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .report-table th,
+        .report-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .report-table th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .report-table tr:hover {
+            background: #f7fafc;
+        }
+
+        .close-report {
+            background: #e53e3e;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .close-report:hover {
+            background: #c53030;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .reports-container {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 1.6rem;
+            }
+
+            .reports-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .nav-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .nav-btn {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .report-table {
+                font-size: 0.9rem;
+            }
+
+            .report-table th,
+            .report-table td {
+                padding: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .report-card {
+                padding: 20px;
+            }
+
+            .report-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="reports-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="company-logo"><?= typeof logo !== 'undefined' ? logo : '📊' ?></div>
+            <h1><?= typeof companyName !== 'undefined' ? companyName : 'Inventory System' ?></h1>
+            <div class="company-slogan">Reports & Analytics</div>
+            
+            <div class="nav-buttons">
+                <button class="nav-btn back" onclick="goToDashboard()">🏠 Dashboard</button>
+                <button class="nav-btn" onclick="showInventory()">📦 Inventory</button>
+                <button class="nav-btn" onclick="showUsers()" id="usersBtn" style="display: none;">👥 Users</button>
+            </div>
+        </div>
+
+        <!-- Reports Grid -->
+        <div class="reports-grid">
+            <div class="report-card">
+                <h3>📦 Inventory Summary</h3>
+                <div class="description">
+                    View total items, stock levels, and inventory value summary.
+                </div>
+                <button class="report-btn" onclick="generateReport('inventory')">Generate Report</button>
+            </div>
+
+            <div class="report-card">
+                <h3>⚠️ Low Stock Alert</h3>
+                <div class="description">
+                    Items that are below minimum stock levels and need restocking.
+                </div>
+                <button class="report-btn" onclick="generateReport('lowstock')">Generate Report</button>
+            </div>
+
+            <div class="report-card">
+                <h3>📅 Expiring Items</h3>
+                <div class="description">
+                    Products that are nearing or past their expiry dates.
+                </div>
+                <button class="report-btn" onclick="generateReport('expiring')">Generate Report</button>
+            </div>
+
+            <div class="report-card">
+                <h3>📋 Stock Activity Log</h3>
+                <div class="description">
+                    Recent stock in/out transactions and inventory changes.
+                </div>
+                <button class="report-btn" onclick="generateReport('stocklog')">Generate Report</button>
+            </div>
+
+            <div class="report-card">
+                <h3>🔍 User Activity Log</h3>
+                <div class="description">
+                    Track user actions and system access history.
+                </div>
+                <button class="report-btn" onclick="generateReport('activitylog')">Generate Report</button>
+            </div>
+
+            <div class="report-card">
+                <h3>💰 Value Analysis</h3>
+                <div class="description">
+                    Inventory valuation and cost analysis by category.
+                </div>
+                <button class="report-btn" onclick="generateReport('value')">Generate Report</button>
+            </div>
+        </div>
+
+        <!-- Loading indicator -->
+        <div class="loading" id="loading" style="display: none;">
+            <div class="spinner"></div>
+            Generating report...
+        </div>
+
+        <!-- Report Content Area -->
+        <div class="report-content" id="reportContent">
+            <button class="close-report" onclick="closeReport()">✕ Close Report</button>
+            <h2 id="reportTitle">Report</h2>
+            <div id="reportData"></div>
+        </div>
+    </div>
+
+    <script>
+        const userRole = '<?= user.role ?>';
+        const sessionToken = '<?= sessionToken ?>';
+        const appUrl = '<?= appUrl ?>';
+
+        // Show/hide user management based on role
+        if (userRole === 'Super Admin' || userRole === 'Admin') {
+            document.getElementById('usersBtn').style.display = 'inline-block';
+        }
+
+        /**
+         * Generate specific report
+         */
+        function generateReport(reportType) {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('reportContent').classList.remove('active');
+            
+            fetch(appUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `action=getReports&sessionToken=${sessionToken}&reportType=${reportType}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                
+                if (data.success) {
+                    displayReport(reportType, data.data);
+                } else {
+                    alert('Error generating report: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                console.error('Error generating report:', error);
+                alert('Error generating report. Please try again.');
+            });
+        }
+
+        /**
+         * Display report data
+         */
+        function displayReport(reportType, data) {
+            const reportContent = document.getElementById('reportContent');
+            const reportTitle = document.getElementById('reportTitle');
+            const reportData = document.getElementById('reportData');
+            
+            // Set report title
+            const titles = {
+                'inventory': '📦 Inventory Summary Report',
+                'lowstock': '⚠️ Low Stock Alert Report',
+                'expiring': '📅 Expiring Items Report',
+                'stocklog': '📋 Stock Activity Log',
+                'activitylog': '🔍 User Activity Log',
+                'value': '💰 Value Analysis Report'
+            };
+            
+            reportTitle.textContent = titles[reportType] || 'Report';
+            
+            // Generate table
+            if (data && data.length > 0) {
+                let tableHTML = '<table class="report-table"><thead><tr>';
+                
+                // Add headers based on first row
+                Object.keys(data[0]).forEach(key => {
+                    tableHTML += `<th>${key}</th>`;
+                });
+                tableHTML += '</tr></thead><tbody>';
+                
+                // Add data rows
+                data.forEach(row => {
+                    tableHTML += '<tr>';
+                    Object.values(row).forEach(value => {
+                        tableHTML += `<td>${value || ''}</td>`;
+                    });
+                    tableHTML += '</tr>';
+                });
+                
+                tableHTML += '</tbody></table>';
+                reportData.innerHTML = tableHTML;
+            } else {
+                reportData.innerHTML = '<p style="text-align: center; color: #718096; padding: 40px;">No data available for this report.</p>';
+            }
+            
+            // Show report
+            reportContent.classList.add('active');
+            reportContent.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        /**
+         * Close report
+         */
+        function closeReport() {
+            document.getElementById('reportContent').classList.remove('active');
+        }
+
+        /**
+         * Navigation functions
+         */
+        function goToDashboard() {
+            window.location.href = `${appUrl}?page=dashboard&sessionToken=${sessionToken}`;
+        }
+
+        function showInventory() {
+            window.location.href = `${appUrl}?page=inventory&sessionToken=${sessionToken}`;
+        }
+
+        function showUsers() {
+            if (userRole === 'Super Admin' || userRole === 'Admin') {
+                window.location.href = `${appUrl}?page=users&sessionToken=${sessionToken}`;
+            } else {
+                alert('You do not have permission to manage users.');
+            }
+        }
+    </script>
+</body>
+</html>

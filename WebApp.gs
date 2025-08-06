@@ -237,6 +237,34 @@ function showWebUsers(e) {
 }
 
 /**
+ * Show web reports page
+ */
+function showWebReports(e) {
+  const sessionToken = e.parameter.sessionToken;
+  
+  if (!verifySession(sessionToken)) {
+    return showLoginPage();
+  }
+  
+  const session = getSessionData(sessionToken);
+  
+  // Get company settings
+  const settings = getCompanySettings();
+  
+  const template = HtmlService.createTemplateFromFile('WebReports');
+  template.user = session.user;
+  template.sessionToken = sessionToken;
+  template.appUrl = ScriptApp.getService().getUrl();
+  template.companyName = settings.companyName;
+  template.slogan = settings.slogan;
+  template.logo = settings.logo;
+  
+  return template.evaluate()
+    .setTitle(`${settings.companyName} - Reports`)
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/**
  * Show access denied page
  */
 function showAccessDeniedPage() {
