@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Login Test Tool</h1>
+        
+        <form id="testForm">
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" required>
+            </div>
+            
+            <button type="submit" id="testBtn">🚀 Test Login</button>
+        </form>
+        
+        <div id="result" class="result info" style="display: none;"></div>
+    </div>
+
+    <script>
+        const appUrl = '<?= appUrl ?>';
+        
+        document.getElementById('testForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('result');
+            const testBtn = document.getElementById('testBtn');
+            
+            // Show loading
+            testBtn.disabled = true;
+            testBtn.textContent = '⏳ Testing...';
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Sending login request...';
+            
+            try {
+                console.log('=== LOGIN TEST START ===');
+                console.log('App URL:', appUrl);
+                console.log('Email:', email);
+                console.log('Password:', password);
+                
+                // Create form data
+                const formData = new FormData();
+                formData.append('action', 'login');
+                formData.append('email', email);
+                formData.append('password', password);
+                
+                console.log('Sending POST request...');
+                
+                // Send request
+                const response = await fetch(appUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                console.log('Response received');
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+                console.log('Response headers:', [...response.headers.entries()]);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const responseText = await response.text();
+                console.log('Raw response text:', responseText);
+                
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                    console.log('Parsed result:', result);
+                } catch (parseError) {
+                    console.error('JSON parse error:', parseError);
+                    throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
+                }
+                
+                // Display result
+                if (result.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ LOGIN SUCCESS!\n\n` +
+                        `User: ${result.user.name}\n` +
+                        `Email: ${result.user.email}\n` +
+                        `Role: ${result.user.role}\n` +
+                        `Session Token: ${result.sessionToken}\n\n` +
+                        `Redirect URL: ${result.redirectUrl}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ LOGIN FAILED\n\n` +
+                        `Error: ${result.error}\n\n` +
+                        `Full Response:\n${JSON.stringify(result, null, 2)}`;
+                }
+                
+            } catch (error) {
+                console.error('Login test error:', error);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ REQUEST ERROR\n\n` +
+                    `Error: ${error.message}\n\n` +
+                    `Check browser console for details.`;
+            } finally {
+                testBtn.disabled = false;
+                testBtn.textContent = '🚀 Test Login';
+            }
+        });
+        
+        // Pre-fill with current user if available
+        window.addEventListener('load', function() {
+            // You can manually fill in your email here for testing
+            document.getElementById('email').value = 'your-email@example.com';
+            document.getElementById('password').value = 'admin123';
+        });
+    </script>
+</body>
+</html>

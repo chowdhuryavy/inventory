@@ -566,7 +566,9 @@
                 }
                 
                 const result = await response.json();
-                console.log('Login response:', result);
+                console.log('Login response:', JSON.stringify(result, null, 2));
+                console.log('Response type:', typeof result);
+                console.log('Response keys:', Object.keys(result));
                 
                 if (result.success) {
                     showSuccess('Login successful! Redirecting...');
@@ -601,8 +603,9 @@
                     }
                     
                     showError(errorMsg);
-                    console.error('Login failed:', result);
-                    console.error('Full response:', result);
+                    console.error('Login failed:', errorMsg);
+                    console.error('Full response:', JSON.stringify(result, null, 2));
+                    console.error('Result object properties:', Object.keys(result));
                 }
             } catch (error) {
                 console.error('Login error:', error);
