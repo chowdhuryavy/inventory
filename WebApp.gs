@@ -118,18 +118,40 @@ function doPost(e) {
  * Show login page
  */
 function showLoginPage() {
-  const template = HtmlService.createTemplateFromFile('WebLogin-Mobile');
-  template.appUrl = ScriptApp.getService().getUrl();
-  
-  // Get company settings
-  const settings = getCompanySettings();
-  template.companyName = settings.companyName;
-  template.slogan = settings.slogan;
-  template.logo = settings.logo;
-  
-  return template.evaluate()
-    .setTitle(`${settings.companyName} - Login`)
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  try {
+    const template = HtmlService.createTemplateFromFile('WebLogin-Mobile');
+    template.appUrl = ScriptApp.getService().getUrl();
+    
+    // Get company settings
+    const settings = getCompanySettings();
+    console.log('Company settings loaded:', settings);
+    
+    template.companyName = settings.companyName;
+    template.slogan = settings.slogan;
+    template.logo = settings.logo;
+    
+    console.log('Template variables set:', {
+      companyName: template.companyName,
+      slogan: template.slogan,
+      logo: template.logo
+    });
+    
+    return template.evaluate()
+      .setTitle(`${settings.companyName} - Login`)
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  } catch (error) {
+    console.error('Error in showLoginPage:', error);
+    // Fallback if settings fail
+    const template = HtmlService.createTemplateFromFile('WebLogin-Mobile');
+    template.appUrl = ScriptApp.getService().getUrl();
+    template.companyName = 'Inventory System';
+    template.slogan = 'Professional Management';
+    template.logo = '📦';
+    
+    return template.evaluate()
+      .setTitle('Inventory System - Login')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
 }
 
 /**

@@ -4,7 +4,7 @@
     <base target="_top">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title><?= companyName || 'Inventory System' ?> - Login</title>
+    <title><?= typeof companyName !== 'undefined' ? companyName : 'Inventory System' ?> - Login</title>
     <style>
         * {
             margin: 0;
@@ -408,12 +408,12 @@
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-header">
-            <div class="logo"><?= logo || '📦' ?></div>
-            <h1><?= companyName || 'Inventory System' ?></h1>
-            <p><?= slogan || 'Professional Inventory Management' ?></p>
-        </div>
+            <div class="login-container">
+            <div class="login-header">
+                <div class="logo"><?= typeof logo !== 'undefined' ? logo : '📦' ?></div>
+                <h1><?= typeof companyName !== 'undefined' ? companyName : 'Inventory System' ?></h1>
+                <p><?= typeof slogan !== 'undefined' ? slogan : 'Professional Inventory Management' ?></p>
+            </div>
         
         <div class="login-body">
 
@@ -480,12 +480,12 @@
             </form>
         </div>
         
-        <div class="footer">
-            <p>&copy; 2024 <?= companyName || 'Inventory System' ?></p>
-            <div class="security-badge">
-                🔒 Secure Login
+                    <div class="footer">
+                <p>&copy; 2024 <?= typeof companyName !== 'undefined' ? companyName : 'Inventory System' ?></p>
+                <div class="security-badge">
+                    🔒 Secure Login
+                </div>
             </div>
-        </div>
     </div>
 
     <script>

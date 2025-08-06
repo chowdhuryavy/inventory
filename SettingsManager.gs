@@ -4,6 +4,28 @@
  */
 
 /**
+ * Show current settings (quick view)
+ */
+function showCurrentSettings() {
+  try {
+    const settings = getCompanySettings();
+    
+    SpreadsheetApp.getUi().alert(
+      '👁️ Current Settings',
+      `Your current company settings:\n\n` +
+      `Company Name: ${settings.companyName}\n` +
+      `Slogan: ${settings.slogan}\n` +
+      `Logo: ${settings.logo}\n\n` +
+      `These will appear in your web app login form.`,
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
+    
+  } catch (error) {
+    SpreadsheetApp.getUi().alert('❌ Error', error.toString(), SpreadsheetApp.getUi().ButtonSet.OK);
+  }
+}
+
+/**
  * Show settings management dialog
  */
 function showSettingsManager() {
@@ -271,9 +293,10 @@ function validateSettings(settings) {
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('⚙️ Company Settings')
+    .addItem('👁️ Show Current Settings', 'showCurrentSettings')
     .addItem('🏢 Manage Settings', 'showSettingsManager')
-    .addItem('➕ Create Settings Sheet', 'createSettingsSheetIfNeeded')
     .addSeparator()
+    .addItem('➕ Create Settings Sheet', 'createSettingsSheetIfNeeded')
     .addItem('🔄 Reset to Default', 'resetSettingsToDefault')
     .addItem('📥 Export Settings', 'exportSettings')
     .addToUi();

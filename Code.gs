@@ -355,10 +355,18 @@ function getSheetData(sheetName, hasHeaders = true) {
  */
 function getCompanySettings() {
   try {
-    const settingsSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEETS.SETTINGS);
+    console.log('Getting company settings...');
+    
+    // First try with CONFIG.SHEETS.SETTINGS, then fallback to 'Settings'
+    let settingsSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEETS.SETTINGS);
+    if (!settingsSheet) {
+      settingsSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Settings');
+    }
+    
+    console.log('Settings sheet found:', !!settingsSheet);
     
     if (!settingsSheet) {
-      // Return default settings if sheet doesn't exist
+      console.log('No Settings sheet found, using defaults');
       return {
         companyName: 'Inventory System',
         slogan: 'Professional Inventory Management',
@@ -367,8 +375,10 @@ function getCompanySettings() {
     }
     
     const lastRow = settingsSheet.getLastRow();
+    console.log('Settings sheet last row:', lastRow);
+    
     if (lastRow < 2) {
-      // Return default settings if no data
+      console.log('No data in Settings sheet, using defaults');
       return {
         companyName: 'Inventory System',
         slogan: 'Professional Inventory Management',
@@ -378,16 +388,19 @@ function getCompanySettings() {
     
     // Get settings data from row 2
     const data = settingsSheet.getRange(2, 1, 1, 3).getValues()[0];
+    console.log('Settings data from sheet:', data);
     
-    return {
-      companyName: data[0] || 'Inventory System',
-      slogan: data[1] || 'Professional Inventory Management',
-      logo: data[2] || '📦'
+    const settings = {
+      companyName: data[0] && data[0].toString().trim() ? data[0].toString().trim() : 'Inventory System',
+      slogan: data[1] && data[1].toString().trim() ? data[1].toString().trim() : 'Professional Inventory Management',
+      logo: data[2] && data[2].toString().trim() ? data[2].toString().trim() : '📦'
     };
+    
+    console.log('Processed settings:', settings);
+    return settings;
     
   } catch (error) {
     console.error('Error getting company settings:', error);
-    // Return default settings on error
     return {
       companyName: 'Inventory System',
       slogan: 'Professional Inventory Management',
