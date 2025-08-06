@@ -12,7 +12,8 @@ const CONFIG = {
     USERS: 'Users', 
     STOCK_LOG: 'Stock_log',
     ACTIVITY_LOG: 'Activity_log',
-    REPORTS: 'Reports'
+    REPORTS: 'Reports',
+    SETTINGS: 'Settings'
   },
   ROLES: {
     SUPER_ADMIN: 'Super Admin',
@@ -47,6 +48,7 @@ function initializeSystem() {
     createStockLogSheet(ss);
     createActivityLogSheet(ss);
     createReportsSheet(ss);
+    createSettingsSheet(ss);
     
     // Add initial Super Admin if no users exist
     setupInitialSuperAdmin();
@@ -188,6 +190,39 @@ function createReportsSheet(ss) {
 }
 
 /**
+ * Create Settings sheet with company information
+ */
+function createSettingsSheet(ss) {
+  let sheet = ss.getSheetByName(CONFIG.SHEETS.SETTINGS);
+  if (!sheet) {
+    sheet = ss.insertSheet(CONFIG.SHEETS.SETTINGS);
+  }
+  
+  sheet.clear();
+  const headers = ['Company Name', 'Slogan', 'Logo'];
+  
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+  sheet.setFrozenRows(1);
+  
+  // Add default company settings
+  const defaultSettings = [
+    'Your Company Name',
+    'Professional Inventory Management',
+    '📦' // Default logo emoji
+  ];
+  
+  sheet.getRange(2, 1, 1, defaultSettings.length).setValues([defaultSettings]);
+  
+  // Format columns
+  sheet.setColumnWidth(1, 200); // Company Name
+  sheet.setColumnWidth(2, 300); // Slogan
+  sheet.setColumnWidth(3, 100); // Logo
+  
+  return sheet;
+}
+
+/**
  * Setup initial Super Admin user (updated for your sheet structure)
  */
 function setupInitialSuperAdmin() {
@@ -313,6 +348,52 @@ function getSheetData(sheetName, hasHeaders = true) {
   const numRows = lastRow - startRow + 1;
   
   return sheet.getRange(startRow, 1, numRows, lastCol).getValues();
+}
+
+/**
+ * Get company settings from Settings sheet
+ */
+function getCompanySettings() {
+  try {
+    const settingsSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEETS.SETTINGS);
+    
+    if (!settingsSheet) {
+      // Return default settings if sheet doesn't exist
+      return {
+        companyName: 'Inventory System',
+        slogan: 'Professional Inventory Management',
+        logo: '📦'
+      };
+    }
+    
+    const lastRow = settingsSheet.getLastRow();
+    if (lastRow < 2) {
+      // Return default settings if no data
+      return {
+        companyName: 'Inventory System',
+        slogan: 'Professional Inventory Management',
+        logo: '📦'
+      };
+    }
+    
+    // Get settings data from row 2
+    const data = settingsSheet.getRange(2, 1, 1, 3).getValues()[0];
+    
+    return {
+      companyName: data[0] || 'Inventory System',
+      slogan: data[1] || 'Professional Inventory Management',
+      logo: data[2] || '📦'
+    };
+    
+  } catch (error) {
+    console.error('Error getting company settings:', error);
+    // Return default settings on error
+    return {
+      companyName: 'Inventory System',
+      slogan: 'Professional Inventory Management',
+      logo: '📦'
+    };
+  }
 }
 
 /**

@@ -118,11 +118,17 @@ function doPost(e) {
  * Show login page
  */
 function showLoginPage() {
-  const template = HtmlService.createTemplateFromFile('WebLogin');
+  const template = HtmlService.createTemplateFromFile('WebLogin-Professional');
   template.appUrl = ScriptApp.getService().getUrl();
   
+  // Get company settings
+  const settings = getCompanySettings();
+  template.companyName = settings.companyName;
+  template.slogan = settings.slogan;
+  template.logo = settings.logo;
+  
   return template.evaluate()
-    .setTitle('Inventory Management System - Login')
+    .setTitle(`${settings.companyName} - Login`)
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
@@ -137,13 +143,20 @@ function showWebDashboard(e) {
   }
   
   const session = getSessionData(sessionToken);
+  
+  // Get company settings
+  const settings = getCompanySettings();
+  
   const template = HtmlService.createTemplateFromFile('WebDashboard');
   template.user = session.user;
   template.sessionToken = sessionToken;
   template.appUrl = ScriptApp.getService().getUrl();
+  template.companyName = settings.companyName;
+  template.slogan = settings.slogan;
+  template.logo = settings.logo;
   
   return template.evaluate()
-    .setTitle('Inventory Dashboard')
+    .setTitle(`Dashboard - ${settings.companyName}`)
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 

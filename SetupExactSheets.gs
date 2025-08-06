@@ -30,6 +30,10 @@ function setupYourExactSheets() {
       {
         name: 'Reports',
         headers: ['Report Type', 'Generated On', 'Data']
+      },
+      {
+        name: 'Settings',
+        headers: ['Company Name', 'Slogan', 'Logo']
       }
     ];
     
@@ -66,6 +70,17 @@ function setupYourExactSheets() {
         sheet.getRange('E:E').setNumberFormat('#,##0'); // Quantity
       } else if (config.name === 'Activity_log') {
         sheet.getRange('A:A').setNumberFormat('MM/dd/yyyy hh:mm:ss'); // Timestamp
+      } else if (config.name === 'Settings') {
+        sheet.setColumnWidth(1, 200); // Company Name
+        sheet.setColumnWidth(2, 300); // Slogan
+        sheet.setColumnWidth(3, 100); // Logo
+        
+        // Add default settings
+        sheet.appendRow([
+          'Your Company Name',
+          'Professional Inventory Management System',
+          '📦'
+        ]);
       }
     }
     
