@@ -163,28 +163,77 @@ function showLoginPage() {
  * Show web dashboard
  */
 function showWebDashboard(e) {
-  const sessionToken = e.parameter.sessionToken;
-  
-  if (!verifySession(sessionToken)) {
-    return showLoginPage();
+  try {
+    console.log('showWebDashboard called with parameters:', e.parameter);
+    
+    const sessionToken = e.parameter.sessionToken;
+    
+    if (!verifySession(sessionToken)) {
+      console.log('Session verification failed, redirecting to login');
+      return showLoginPage();
+    }
+    
+    const session = getSessionData(sessionToken);
+    console.log('Session data retrieved:', session ? 'Success' : 'Failed');
+    
+    if (!session || !session.user) {
+      console.log('No valid session data, redirecting to login');
+      return showLoginPage();
+    }
+    
+    // Get company settings with detailed logging
+    console.log('Fetching company settings...');
+    const settings = getCompanySettings();
+    console.log('Company settings retrieved:', settings);
+    
+    console.log('Creating template...');
+    const template = HtmlService.createTemplateFromFile('WebDashboard');
+    
+    // Set template variables with logging
+    template.user = session.user;
+    template.sessionToken = sessionToken;
+    template.appUrl = ScriptApp.getService().getUrl();
+    template.companyName = settings.companyName || 'Inventory System';
+    template.slogan = settings.slogan || 'Professional Management';
+    template.logo = settings.logo || '📦';
+    
+    console.log('Template variables set:', {
+      userEmail: session.user.email,
+      userName: session.user.name,
+      userRole: session.user.role,
+      companyName: template.companyName,
+      slogan: template.slogan,
+      logo: template.logo,
+      appUrl: template.appUrl
+    });
+    
+    const result = template.evaluate()
+      .setTitle(`Dashboard - ${template.companyName}`)
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    
+    console.log('Dashboard template evaluation successful');
+    return result;
+    
+  } catch (error) {
+    console.error('Error in showWebDashboard:', error);
+    console.error('Error stack:', error.stack);
+    
+    // Return simple fallback HTML
+    const fallbackHtml = `
+      <html>
+        <body>
+          <h1>Dashboard Error</h1>
+          <p>There was an error loading the dashboard. Please try refreshing the page.</p>
+          <p>Error: ${error.message}</p>
+          <a href="${ScriptApp.getService().getUrl()}">Return to Login</a>
+        </body>
+      </html>
+    `;
+    
+    return HtmlService.createHtml(fallbackHtml)
+      .setTitle('Dashboard Error')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
-  
-  const session = getSessionData(sessionToken);
-  
-  // Get company settings
-  const settings = getCompanySettings();
-  
-  const template = HtmlService.createTemplateFromFile('WebDashboard');
-  template.user = session.user;
-  template.sessionToken = sessionToken;
-  template.appUrl = ScriptApp.getService().getUrl();
-  template.companyName = settings.companyName;
-  template.slogan = settings.slogan;
-  template.logo = settings.logo;
-  
-  return template.evaluate()
-    .setTitle(`Dashboard - ${settings.companyName}`)
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 /**

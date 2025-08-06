@@ -410,6 +410,53 @@ function getCompanySettings() {
 }
 
 /**
+ * Test function to ensure Settings sheet exists and has proper data
+ */
+function testSettingsSheet() {
+  try {
+    console.log('Testing Settings sheet...');
+    
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let settingsSheet = ss.getSheetByName('Settings');
+    
+    if (!settingsSheet) {
+      console.log('Settings sheet not found, creating it...');
+      settingsSheet = createSettingsSheet(ss);
+    }
+    
+    const lastRow = settingsSheet.getLastRow();
+    console.log('Settings sheet last row:', lastRow);
+    
+    if (lastRow < 2) {
+      console.log('Adding default data to Settings sheet...');
+      const defaultData = ['My Company', 'Professional Inventory Management', '🏢'];
+      settingsSheet.getRange(2, 1, 1, 3).setValues([defaultData]);
+    }
+    
+    // Test getCompanySettings function
+    const settings = getCompanySettings();
+    console.log('Final settings test result:', settings);
+    
+    SpreadsheetApp.getUi().alert(
+      'Settings Test Complete',
+      `Settings sheet test completed!\n\n` +
+      `Company Name: ${settings.companyName}\n` +
+      `Slogan: ${settings.slogan}\n` +
+      `Logo: ${settings.logo}\n\n` +
+      `These settings will now appear in your web app.`,
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
+    
+    return settings;
+    
+  } catch (error) {
+    console.error('Error in testSettingsSheet:', error);
+    SpreadsheetApp.getUi().alert('Settings Test Error', error.toString(), SpreadsheetApp.getUi().ButtonSet.OK);
+    return null;
+  }
+}
+
+/**
  * Utility function to find row by column value
  */
 function findRowByColumnValue(sheetName, columnIndex, value) {
