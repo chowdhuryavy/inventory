@@ -12,7 +12,7 @@ function showInventoryManager() {
     return;
   }
   
-  const html = HtmlService.createTemplateFromFile('InventoryManager');
+  const html = HtmlService.createTemplateFromFile('WebInventory');
   html.userRole = getCurrentUserRole();
   
   const htmlOutput = html.evaluate()

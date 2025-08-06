@@ -343,18 +343,4 @@ function validateSettings(settings) {
   return errors;
 }
 
-/**
- * Menu for settings functions
- */
-function onOpen() {
-  const ui = SpreadsheetApp.getUi();
-  ui.createMenu('⚙️ Company Settings')
-    .addItem('👁️ Show Current Settings', 'showCurrentSettings')
-    .addItem('🔍 Debug Settings Data', 'debugSettings')
-    .addSeparator()
-    .addItem('🏢 Manage Settings', 'showSettingsManager')
-    .addItem('➕ Create Settings Sheet', 'createSettingsSheetIfNeeded')
-    .addItem('🔄 Reset to Default', 'resetSettingsToDefault')
-    .addItem('📥 Export Settings', 'exportSettings')
-    .addToUi();
-}
+// Note: onOpen function is now consolidated in Code.gs to avoid conflicts

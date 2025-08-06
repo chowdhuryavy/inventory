@@ -31,8 +31,40 @@ const CONFIG = {
  * Uses enhanced authentication system
  */
 function onOpen() {
-  // Use the enhanced authentication system
-  onOpenWithAuth();
+  const ui = SpreadsheetApp.getUi();
+  
+  // Main Inventory System Menu
+  ui.createMenu('📦 Inventory System')
+    .addItem('🚀 Initialize System', 'initializeSystem')
+    .addItem('👤 Current User Role', 'showCurrentUserRole')
+    .addSeparator()
+    .addItem('📊 Dashboard', 'showDashboard')
+    .addItem('📋 Inventory Manager', 'showInventoryManager')
+    .addItem('👥 User Manager', 'showUserManager')
+    .addItem('📈 Reports', 'showReports')
+    .addSeparator()
+    .addItem('🌐 Open Web App', 'openWebApp')
+    .addToUi();
+    
+  // Sheet Setup Menu
+  ui.createMenu('🔧 Sheet Setup')
+    .addItem('📋 Check Current Sheets', 'checkCurrentSheets')
+    .addItem('🚀 Setup Your Exact Sheets', 'setupYourExactSheets')
+    .addSeparator()
+    .addItem('🧹 Clean Start (Delete All)', 'cleanStart')
+    .addItem('📖 Show Setup Guide', 'showSetupGuide')
+    .addToUi();
+    
+  // Company Settings Menu
+  ui.createMenu('⚙️ Company Settings')
+    .addItem('👁️ Show Current Settings', 'showCurrentSettings')
+    .addItem('🔍 Debug Settings Data', 'debugSettings')
+    .addItem('🧪 Test Settings Sheet', 'testSettingsSheet')
+    .addSeparator()
+    .addItem('🏢 Manage Settings', 'showSettingsManager')
+    .addItem('➕ Create Settings Sheet', 'createSettingsSheetIfNeeded')
+    .addItem('🔄 Reset to Default', 'resetSettingsToDefault')
+    .addToUi();
 }
 
 /**
@@ -406,6 +438,64 @@ function getCompanySettings() {
       slogan: 'Professional Inventory Management',
       logo: '📦'
     };
+  }
+}
+
+/**
+ * Show current user role
+ */
+function showCurrentUserRole() {
+  const role = getCurrentUserRole();
+  const email = Session.getActiveUser().getEmail();
+  
+  SpreadsheetApp.getUi().alert(
+    'Current User Role',
+    `Email: ${email}\nRole: ${role}`,
+    SpreadsheetApp.getUi().ButtonSet.OK
+  );
+}
+
+/**
+ * Show dashboard (legacy function for menu)
+ */
+function showDashboard() {
+  SpreadsheetApp.getUi().alert(
+    'Web Dashboard',
+    'Please use the web application for the full dashboard experience.\n\nClick "Open Web App" from the menu or deploy the script as a web app.',
+    SpreadsheetApp.getUi().ButtonSet.OK
+  );
+}
+
+/**
+ * Open web app URL
+ */
+function openWebApp() {
+  const url = ScriptApp.getService().getUrl();
+  if (url) {
+    const template = HtmlService.createTemplate(`
+      <p>Your web app URL is:</p>
+      <p><a href="<?= url ?>" target="_blank"><?= url ?></a></p>
+      <p>Click the link above to open your inventory management system.</p>
+      <script>
+        setTimeout(function() {
+          window.open('<?= url ?>', '_blank');
+        }, 2000);
+      </script>
+    `);
+    template.url = url;
+    
+    const htmlOutput = template.evaluate()
+      .setWidth(400)
+      .setHeight(200)
+      .setTitle('Web App URL');
+      
+    SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Open Web App');
+  } else {
+    SpreadsheetApp.getUi().alert(
+      'Web App Not Deployed',
+      'Please deploy this script as a web app first.\n\nGo to Deploy > New Deployment > Web app',
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
   }
 }
 

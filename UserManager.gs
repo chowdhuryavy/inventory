@@ -12,7 +12,7 @@ function showUserManager() {
     return;
   }
   
-  const html = HtmlService.createTemplateFromFile('UserManager');
+  const html = HtmlService.createTemplateFromFile('WebUsers');
   html.userRole = getCurrentUserRole();
   
   const htmlOutput = html.evaluate()

@@ -219,20 +219,7 @@ function cleanStart() {
   }
 }
 
-/**
- * Simple menu for easy access
- */
-function onOpen() {
-  const ui = SpreadsheetApp.getUi();
-  ui.createMenu('🔧 Sheet Setup')
-    .addItem('📋 Check Current Sheets', 'checkCurrentSheets')
-    .addItem('🚀 Setup Your Exact Sheets', 'setupYourExactSheets')
-    .addSeparator()
-    .addItem('🧹 Clean Start (Delete All)', 'cleanStart')
-    .addSeparator()
-    .addItem('📖 Show Setup Guide', 'showSetupGuide')
-    .addToUi();
-}
+// Note: onOpen function is now consolidated in Code.gs to avoid conflicts
 
 /**
  * Show complete setup guide

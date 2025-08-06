@@ -12,7 +12,7 @@ function showDashboard() {
     return;
   }
   
-  const html = HtmlService.createTemplateFromFile('Dashboard');
+  const html = HtmlService.createTemplateFromFile('WebDashboard');
   html.userRole = getCurrentUserRole();
   html.dashboardData = getDashboardData();
   
@@ -33,7 +33,7 @@ function showReports() {
     return;
   }
   
-  const html = HtmlService.createTemplateFromFile('Reports');
+  const html = HtmlService.createTemplateFromFile('WebReports');
   html.userRole = getCurrentUserRole();
   
   const htmlOutput = html.evaluate()
@@ -53,7 +53,7 @@ function showLogs() {
     return;
   }
   
-  const html = HtmlService.createTemplateFromFile('Logs');
+  const html = HtmlService.createTemplateFromFile('WebReports');
   html.userRole = getCurrentUserRole();
   
   const htmlOutput = html.evaluate()
