@@ -27,32 +27,11 @@ const CONFIG = {
 
 /**
  * Initialize the spreadsheet with required sheets and headers
+ * Uses enhanced authentication system
  */
 function onOpen() {
-  const ui = SpreadsheetApp.getUi();
-  const menu = ui.createMenu('Inventory Management');
-  
-  // Get current user's role to show appropriate menu items
-  const userRole = getCurrentUserRole();
-  
-  if (userRole) {
-    menu.addItem('📊 Dashboard', 'showDashboard');
-    menu.addItem('📦 Manage Inventory', 'showInventoryManager');
-    
-    if (userRole === CONFIG.ROLES.SUPER_ADMIN || userRole === CONFIG.ROLES.ADMIN) {
-      menu.addItem('👥 Manage Users', 'showUserManager');
-    }
-    
-    menu.addItem('📈 View Reports', 'showReports');
-    menu.addItem('📋 View Logs', 'showLogs');
-    menu.addSeparator();
-    menu.addItem('⚙️ Setup System', 'initializeSystem');
-  } else {
-    menu.addItem('🔧 Initialize System', 'initializeSystem');
-    menu.addItem('👤 Request Access', 'requestAccess');
-  }
-  
-  menu.addToUi();
+  // Use the enhanced authentication system
+  onOpenWithAuth();
 }
 
 /**
