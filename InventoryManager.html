@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #4a5568;
+            font-size: 2em;
+        }
+
+        .toolbar {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #718096;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ed8936;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #e53e3e;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #718096;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .inventory-table {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .table-container {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        .stock-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .stock-ok {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .stock-low {
+            background: #fed7cc;
+            color: #c53030;
+        }
+
+        .stock-out {
+            background: #fed7d7;
+            color: #e53e3e;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 50px auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+        }
+
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+
+        .close:hover {
+            opacity: 0.7;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .action-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .spinner {
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #e53e3e;
+            border: 1px solid #feb2b2;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-box {
+                min-width: auto;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .table-container {
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📦 Inventory Management</h1>
+            <div>User: <strong><?= getCurrentUserRole() ?></strong></div>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <div class="toolbar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search by SKU, name, category, or supplier...">
+                <span class="search-icon">🔍</span>
+            </div>
+            <button class="btn btn-primary" onclick="openAddItemModal()">
+                ➕ Add Item
+            </button>
+            <button class="btn btn-success" onclick="openStockUpdateModal()">
+                📈 Update Stock
+            </button>
+            <button class="btn btn-secondary" onclick="refreshInventory()">
+                🔄 Refresh
+            </button>
+        </div>
+
+        <div class="inventory-table">
+            <div class="table-header">Inventory Items</div>
+            <div class="table-container">
+                <table id="inventoryTable">
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th>Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Supplier</th>
+                            <th>Expiry Date</th>
+                            <th>Min Stock</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody">
+                        <tr>
+                            <td colspan="10">
+                                <div class="loading">
+                                    <div class="spinner"></div>
+                                    Loading inventory items...
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Item Modal -->
+    <div id="itemModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="itemModalTitle">Add New Item</h2>
+                <button class="close" onclick="closeItemModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="itemForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="itemSku">SKU *</label>
+                            <input type="text" id="itemSku" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="itemName">Product Name *</label>
+                            <input type="text" id="itemName" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="itemCategory">Category *</label>
+                            <input type="text" id="itemCategory" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="itemSupplier">Supplier</label>
+                            <input type="text" id="itemSupplier">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="itemQuantity">Quantity</label>
+                            <input type="number" id="itemQuantity" min="0" step="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="itemPrice">Unit Price</label>
+                            <input type="number" id="itemPrice" min="0" step="0.01">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="itemExpiry">Expiry Date</label>
+                            <input type="date" id="itemExpiry">
+                        </div>
+                        <div class="form-group">
+                            <label for="itemMinStock">Minimum Stock Level</label>
+                            <input type="number" id="itemMinStock" min="0" step="1">
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button type="submit" class="btn btn-primary">Save Item</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeItemModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Update Modal -->
+    <div id="stockModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Update Stock</h2>
+                <button class="close" onclick="closeStockModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="stockForm">
+                    <div class="form-group">
+                        <label for="stockSku">Select Item by SKU</label>
+                        <select id="stockSku" required>
+                            <option value="">Select an item...</option>
+                        </select>
+                    </div>
+                    <div id="stockItemInfo" style="display: none;">
+                        <div class="form-group">
+                            <label>Current Stock:</label>
+                            <div id="currentStock" style="font-size: 1.2em; font-weight: bold; color: #667eea;"></div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="stockAction">Action *</label>
+                            <select id="stockAction" required>
+                                <option value="">Select action...</option>
+                                <option value="Stock In">Stock In</option>
+                                <option value="Stock Out">Stock Out</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="stockQuantity">Quantity *</label>
+                            <input type="number" id="stockQuantity" min="1" step="1" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="stockRemarks">Remarks</label>
+                        <textarea id="stockRemarks" rows="3" placeholder="Optional remarks about this stock change..."></textarea>
+                    </div>
+                    <div class="action-buttons">
+                        <button type="submit" class="btn btn-primary">Update Stock</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeStockModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let inventoryData = [];
+        let currentEditSku = null;
+        const userRole = '<?= userRole ?>';
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadInventoryItems();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Search functionality
+            document.getElementById('searchInput').addEventListener('input', filterInventory);
+            
+            // Form submissions
+            document.getElementById('itemForm').addEventListener('submit', handleItemSubmit);
+            document.getElementById('stockForm').addEventListener('submit', handleStockSubmit);
+            
+            // Stock SKU selection
+            document.getElementById('stockSku').addEventListener('change', updateStockInfo);
+        }
+
+        function loadInventoryItems() {
+            google.script.run
+                .withSuccessHandler(displayInventoryItems)
+                .withFailureHandler(handleError)
+                .getInventoryItems();
+        }
+
+        function displayInventoryItems(items) {
+            inventoryData = items;
+            const tbody = document.getElementById('inventoryTableBody');
+            
+            if (!items || items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: #718096;">No inventory items found</td></tr>';
+                return;
+            }
+
+            const html = items.map(item => `
+                <tr>
+                    <td>${item.sku || ''}</td>
+                    <td>${item.productName || ''}</td>
+                    <td>${item.category || ''}</td>
+                    <td>${item.quantity || 0}</td>
+                    <td>$${(item.unitPrice || 0).toFixed(2)}</td>
+                    <td>${item.supplier || ''}</td>
+                    <td>${item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : ''}</td>
+                    <td>${item.minStockLevel || 0}</td>
+                    <td>${getStockStatus(item)}</td>
+                    <td>${getActionButtons(item)}</td>
+                </tr>
+            `).join('');
+
+            tbody.innerHTML = html;
+            populateStockSkuSelect();
+        }
+
+        function getStockStatus(item) {
+            const quantity = item.quantity || 0;
+            const minStock = item.minStockLevel || 0;
+            
+            if (quantity === 0) {
+                return '<span class="stock-status stock-out">Out of Stock</span>';
+            } else if (quantity <= minStock && minStock > 0) {
+                return '<span class="stock-status stock-low">Low Stock</span>';
+            } else {
+                return '<span class="stock-status stock-ok">In Stock</span>';
+            }
+        }
+
+        function getActionButtons(item) {
+            let buttons = `
+                <div class="action-buttons">
+                    <button class="action-btn btn-warning" onclick="editItem('${item.sku}')">Edit</button>
+            `;
+            
+            // Only show delete button for Super Admin and Admin
+            if (userRole === 'Super Admin' || userRole === 'Admin') {
+                buttons += `<button class="action-btn btn-danger" onclick="deleteItem('${item.sku}')">Delete</button>`;
+            }
+            
+            buttons += '</div>';
+            return buttons;
+        }
+
+        function filterInventory() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            if (!searchTerm) {
+                displayInventoryItems(inventoryData);
+                return;
+            }
+
+            const filtered = inventoryData.filter(item => {
+                return (item.sku && item.sku.toLowerCase().includes(searchTerm)) ||
+                       (item.productName && item.productName.toLowerCase().includes(searchTerm)) ||
+                       (item.category && item.category.toLowerCase().includes(searchTerm)) ||
+                       (item.supplier && item.supplier.toLowerCase().includes(searchTerm));
+            });
+
+            displayInventoryItems(filtered);
+        }
+
+        function openAddItemModal() {
+            currentEditSku = null;
+            document.getElementById('itemModalTitle').textContent = 'Add New Item';
+            document.getElementById('itemForm').reset();
+            document.getElementById('itemSku').readOnly = false;
+            document.getElementById('itemModal').style.display = 'block';
+        }
+
+        function editItem(sku) {
+            const item = inventoryData.find(i => i.sku === sku);
+            if (!item) return;
+
+            currentEditSku = sku;
+            document.getElementById('itemModalTitle').textContent = 'Edit Item';
+            
+            // Populate form
+            document.getElementById('itemSku').value = item.sku || '';
+            document.getElementById('itemName').value = item.productName || '';
+            document.getElementById('itemCategory').value = item.category || '';
+            document.getElementById('itemSupplier').value = item.supplier || '';
+            document.getElementById('itemQuantity').value = item.quantity || 0;
+            document.getElementById('itemPrice').value = item.unitPrice || 0;
+            document.getElementById('itemMinStock').value = item.minStockLevel || 0;
+            
+            if (item.expiryDate) {
+                const date = new Date(item.expiryDate);
+                document.getElementById('itemExpiry').value = date.toISOString().split('T')[0];
+            }
+            
+            document.getElementById('itemSku').readOnly = true;
+            document.getElementById('itemModal').style.display = 'block';
+        }
+
+        function deleteItem(sku) {
+            if (!confirm('Are you sure you want to delete this item? This action cannot be undone.')) {
+                return;
+            }
+
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        showAlert('Item deleted successfully', 'success');
+                        loadInventoryItems();
+                    } else {
+                        showAlert('Error: ' + result.message, 'error');
+                    }
+                })
+                .withFailureHandler(handleError)
+                .deleteInventoryItem(sku);
+        }
+
+        function closeItemModal() {
+            document.getElementById('itemModal').style.display = 'none';
+            currentEditSku = null;
+        }
+
+        function handleItemSubmit(e) {
+            e.preventDefault();
+            
+            const itemData = {
+                sku: document.getElementById('itemSku').value,
+                productName: document.getElementById('itemName').value,
+                category: document.getElementById('itemCategory').value,
+                supplier: document.getElementById('itemSupplier').value,
+                quantity: parseInt(document.getElementById('itemQuantity').value) || 0,
+                unitPrice: parseFloat(document.getElementById('itemPrice').value) || 0,
+                minStockLevel: parseInt(document.getElementById('itemMinStock').value) || 0,
+                expiryDate: document.getElementById('itemExpiry').value || null
+            };
+
+            if (currentEditSku) {
+                // Update existing item
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        if (result.success) {
+                            showAlert('Item updated successfully', 'success');
+                            closeItemModal();
+                            loadInventoryItems();
+                        } else {
+                            showAlert('Error: ' + result.message, 'error');
+                        }
+                    })
+                    .withFailureHandler(handleError)
+                    .updateInventoryItem(currentEditSku, itemData);
+            } else {
+                // Add new item
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        if (result.success) {
+                            showAlert('Item added successfully', 'success');
+                            closeItemModal();
+                            loadInventoryItems();
+                        } else {
+                            showAlert('Error: ' + result.message, 'error');
+                        }
+                    })
+                    .withFailureHandler(handleError)
+                    .addInventoryItem(itemData);
+            }
+        }
+
+        function openStockUpdateModal() {
+            document.getElementById('stockForm').reset();
+            document.getElementById('stockItemInfo').style.display = 'none';
+            document.getElementById('stockModal').style.display = 'block';
+        }
+
+        function closeStockModal() {
+            document.getElementById('stockModal').style.display = 'none';
+        }
+
+        function populateStockSkuSelect() {
+            const select = document.getElementById('stockSku');
+            select.innerHTML = '<option value="">Select an item...</option>';
+            
+            inventoryData.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.sku;
+                option.textContent = `${item.sku} - ${item.productName}`;
+                select.appendChild(option);
+            });
+        }
+
+        function updateStockInfo() {
+            const sku = document.getElementById('stockSku').value;
+            const infoDiv = document.getElementById('stockItemInfo');
+            
+            if (!sku) {
+                infoDiv.style.display = 'none';
+                return;
+            }
+            
+            const item = inventoryData.find(i => i.sku === sku);
+            if (item) {
+                document.getElementById('currentStock').textContent = item.quantity || 0;
+                infoDiv.style.display = 'block';
+            }
+        }
+
+        function handleStockSubmit(e) {
+            e.preventDefault();
+            
+            const sku = document.getElementById('stockSku').value;
+            const action = document.getElementById('stockAction').value;
+            const quantity = parseInt(document.getElementById('stockQuantity').value);
+            const remarks = document.getElementById('stockRemarks').value;
+
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        showAlert(result.message, 'success');
+                        closeStockModal();
+                        loadInventoryItems();
+                    } else {
+                        showAlert('Error: ' + result.message, 'error');
+                    }
+                })
+                .withFailureHandler(handleError)
+                .updateStock(sku, quantity, action, remarks);
+        }
+
+        function refreshInventory() {
+            showAlert('Refreshing inventory...', 'success');
+            loadInventoryItems();
+        }
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alert.style.display = 'block';
+            
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        function handleError(error) {
+            console.error('Error:', error);
+            showAlert('Error: ' + (error.message || error), 'error');
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const itemModal = document.getElementById('itemModal');
+            const stockModal = document.getElementById('stockModal');
+            
+            if (event.target === itemModal) {
+                closeItemModal();
+            }
+            if (event.target === stockModal) {
+                closeStockModal();
+            }
+        };
+    </script>
+</body>
+</html>
