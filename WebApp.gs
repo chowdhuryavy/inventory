@@ -34,21 +34,14 @@ function doGet(e) {
  * Handle POST requests (form submissions, AJAX calls)
  */
 function doPost(e) {
-  console.log('=== doPost called ===');
-  console.log('Parameters:', JSON.stringify(e.parameter));
-  
   const action = e.parameter.action;
   const sessionToken = e.parameter.sessionToken;
-  
-  console.log('Action:', action);
-  console.log('Session Token:', sessionToken);
   
   // Log the action attempt
   logWebAction(e);
   
   // Verify session for protected actions
   if (action !== 'login' && !verifySession(sessionToken)) {
-    console.log('Session verification failed for protected action:', action);
     return ContentService
       .createTextOutput(JSON.stringify({
         success: false,
@@ -238,52 +231,37 @@ function showAccessDeniedPage() {
  */
 function handleWebLogin(e) {
   try {
-    console.log('handleWebLogin called with parameters:', e.parameter);
-    
     const email = e.parameter.email;
     const password = e.parameter.password;
     
     if (!email || !password) {
-      return ContentService.createTextOutput(JSON.stringify({
+      return {
         success: false,
         error: 'Email and password are required'
-      })).setMimeType(ContentService.MimeType.JSON);
+      };
     }
-    
-    console.log(`Login attempt for: ${email}`);
-    
-    // Log login attempt
-    logDetailedActivity('Login Attempt', `Login attempt for email: ${email}`, {
-      email: email,
-      userAgent: e.parameter.userAgent || 'Unknown',
-      timestamp: new Date()
-    });
     
     // Validate credentials
     const result = validateWebCredentials(email, password);
-    console.log('Validation result:', result);
     
     if (!result || !result.success) {
       const errorMessage = result?.error || 'Invalid email or password';
-      console.log('Login failed:', errorMessage);
       
       logDetailedActivity('Login Failed', `Failed login for email: ${email}`, {
         email: email,
         reason: errorMessage
       });
       
-      return ContentService.createTextOutput(JSON.stringify({
+      return {
         success: false,
         error: errorMessage
-      })).setMimeType(ContentService.MimeType.JSON);
+      };
     }
     
     const user = result.user;
-    console.log('User authenticated:', user.email);
     
     // Create session
     const sessionToken = createSession(user);
-    console.log('Session created:', sessionToken);
     
     logDetailedActivity('Login Success', `Successful login for: ${user.name}`, {
       email: user.email,
@@ -291,7 +269,7 @@ function handleWebLogin(e) {
       sessionToken: sessionToken
     });
     
-    const response = {
+    return {
       success: true,
       sessionToken: sessionToken,
       user: {
@@ -301,18 +279,13 @@ function handleWebLogin(e) {
       },
       redirectUrl: `${ScriptApp.getService().getUrl()}?page=dashboard&sessionToken=${sessionToken}`
     };
-    
-    console.log('Login response:', response);
-    
-    return ContentService.createTextOutput(JSON.stringify(response))
-      .setMimeType(ContentService.MimeType.JSON);
       
   } catch (error) {
     console.error('Login error:', error);
-    return ContentService.createTextOutput(JSON.stringify({
+    return {
       success: false,
       error: 'Login system error: ' + error.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
+    };
   }
 }
 
@@ -345,46 +318,32 @@ function handleWebLogout(e) {
  */
 function validateWebCredentials(email, password) {
   try {
-    console.log(`Validating credentials for: ${email}`);
-    
     const usersSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
     if (!usersSheet) {
-      console.log('❌ Users sheet not found');
       return { error: 'Users sheet not found' };
     }
     
     const lastRow = usersSheet.getLastRow();
-    console.log(`Users sheet has ${lastRow} rows`);
-    
     if (lastRow < 2) {
-      console.log('❌ No users in sheet');
       return { error: 'No users found in system' };
     }
     
     // Get all user data
     const data = usersSheet.getRange(2, 1, lastRow - 1, 6).getValues();
-    console.log(`Checking ${data.length} users`);
     
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
-      console.log(`Checking user ${i + 1}: ${row[0]}`);
       
       if (row[0] === email) {
-        console.log(`✅ Email match found`);
-        console.log(`User status: ${row[4]}`);
-        
         // Check if user is active
         if (row[4] !== 'Active') {
-          console.log(`❌ User account not active: ${row[4]}`);
           return { error: 'Account is not active' };
         }
         
         // Check password
         const storedPassword = row[2];
-        console.log(`Password check: stored="${storedPassword}", provided="${password}"`);
         
         if (storedPassword === password) {
-          console.log('✅ Password match - login successful');
           return {
             success: true,
             user: {
@@ -396,19 +355,14 @@ function validateWebCredentials(email, password) {
             }
           };
         } else {
-          console.log('❌ Password mismatch');
           return { error: 'Invalid password' };
         }
       }
     }
     
-    console.log(`❌ Email not found: ${email}`);
-    const allEmails = data.map(row => row[0]);
-    console.log('Available emails:', allEmails);
     return { error: 'Email not found' };
     
   } catch (error) {
-    console.error('Error validating credentials:', error);
     return { error: error.toString() };
   }
 }
