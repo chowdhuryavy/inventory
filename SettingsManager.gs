@@ -26,6 +26,62 @@ function showCurrentSettings() {
 }
 
 /**
+ * Debug Settings - Check raw data from Settings sheet
+ */
+function debugSettings() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    // Check if Settings sheet exists
+    let settingsSheet = ss.getSheetByName('Settings');
+    
+    if (!settingsSheet) {
+      SpreadsheetApp.getUi().alert(
+        '❌ Settings Sheet Not Found',
+        'The Settings sheet does not exist. Please create it with:\n\n' +
+        'Column A: Company Name\n' +
+        'Column B: Slogan\n' +
+        'Column C: Logo\n\n' +
+        'And add your data in row 2.',
+        SpreadsheetApp.getUi().ButtonSet.OK
+      );
+      return;
+    }
+    
+    // Get raw data
+    const lastRow = settingsSheet.getLastRow();
+    const headers = settingsSheet.getRange(1, 1, 1, 3).getValues()[0];
+    
+    let dataText = '';
+    if (lastRow >= 2) {
+      const data = settingsSheet.getRange(2, 1, 1, 3).getValues()[0];
+      dataText = `Row 2 Data:\n` +
+                 `A2: "${data[0]}" (${typeof data[0]})\n` +
+                 `B2: "${data[1]}" (${typeof data[1]})\n` +
+                 `C2: "${data[2]}" (${typeof data[2]})\n\n`;
+    } else {
+      dataText = 'No data in row 2!\n\n';
+    }
+    
+    SpreadsheetApp.getUi().alert(
+      '🔍 Settings Debug Info',
+      `Settings Sheet Found: ✅\n` +
+      `Last Row: ${lastRow}\n\n` +
+      `Headers (Row 1):\n` +
+      `A1: "${headers[0]}"\n` +
+      `B1: "${headers[1]}"\n` +
+      `C1: "${headers[2]}"\n\n` +
+      dataText +
+      `TIP: Make sure row 2 has your company data!`,
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
+    
+  } catch (error) {
+    SpreadsheetApp.getUi().alert('❌ Debug Error', error.toString(), SpreadsheetApp.getUi().ButtonSet.OK);
+  }
+}
+
+/**
  * Show settings management dialog
  */
 function showSettingsManager() {
@@ -294,8 +350,9 @@ function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('⚙️ Company Settings')
     .addItem('👁️ Show Current Settings', 'showCurrentSettings')
-    .addItem('🏢 Manage Settings', 'showSettingsManager')
+    .addItem('🔍 Debug Settings Data', 'debugSettings')
     .addSeparator()
+    .addItem('🏢 Manage Settings', 'showSettingsManager')
     .addItem('➕ Create Settings Sheet', 'createSettingsSheetIfNeeded')
     .addItem('🔄 Reset to Default', 'resetSettingsToDefault')
     .addItem('📥 Export Settings', 'exportSettings')

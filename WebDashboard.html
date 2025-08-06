@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title><?= typeof companyName !== 'undefined' ? companyName : 'Inventory System' ?> - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            font-size: 16px; /* Prevent iOS zoom */
+        }
+
+        .dashboard-container {
+            padding: 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .header .company-logo {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .header h1 {
+            color: #4a5568;
+            margin-bottom: 5px;
+            font-size: 2.2rem;
+        }
+
+        .header .company-slogan {
+            color: #718096;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        .header .user-info {
+            color: #718096;
+            font-size: 1.1rem;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .nav-btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            min-height: 44px; /* Touch target */
+            min-width: 120px;
+        }
+
+        .nav-btn:hover {
+            background: #3182ce;
+            transform: translateY(-2px);
+        }
+
+        .nav-btn.logout {
+            background: #e53e3e;
+        }
+
+        .nav-btn.logout:hover {
+            background: #c53030;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4a5568;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 1rem;
+        }
+
+        .quick-actions {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .quick-actions h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #4299e1;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            margin: 0 auto 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .action-buttons {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .nav-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .nav-btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 15px;
+            }
+
+            .quick-actions {
+                padding: 20px;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="company-logo"><?= typeof logo !== 'undefined' ? logo : '📦' ?></div>
+            <h1><?= typeof companyName !== 'undefined' ? companyName : 'Inventory System' ?></h1>
+            <div class="company-slogan"><?= typeof slogan !== 'undefined' ? slogan : 'Professional Inventory Management' ?></div>
+            
+            <div class="user-info">
+                Welcome, <strong><?= user.name ?></strong> (<?= user.role ?>)
+            </div>
+            
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="showInventory()">📦 Inventory</button>
+                <button class="nav-btn" onclick="showUsers()" id="usersBtn" style="display: none;">👥 Users</button>
+                <button class="nav-btn" onclick="showReports()">📊 Reports</button>
+                <button class="nav-btn logout" onclick="logout()">🚪 Logout</button>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-value" id="totalItems">-</div>
+                <div class="stat-label">Total Items</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-value" id="lowStock">-</div>
+                <div class="stat-label">Low Stock Items</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-value" id="expiringSoon">-</div>
+                <div class="stat-label">Expiring Soon</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value" id="totalValue">-</div>
+                <div class="stat-label">Total Value</div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <h2>Quick Actions</h2>
+            <div class="action-buttons">
+                <button class="action-btn" onclick="showInventory()">
+                    📦 Manage Inventory
+                </button>
+                <button class="action-btn" onclick="showAddInventory()">
+                    ➕ Add New Item
+                </button>
+                <button class="action-btn" onclick="showUsers()" id="manageUsersBtn" style="display: none;">
+                    👥 Manage Users
+                </button>
+                <button class="action-btn" onclick="showReports()">
+                    📊 View Reports
+                </button>
+                <button class="action-btn" onclick="showStockLog()">
+                    📋 Stock Log
+                </button>
+                <button class="action-btn" onclick="showActivityLog()">
+                    🔍 Activity Log
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading indicator -->
+        <div class="loading" id="loading" style="display: none;">
+            <div class="spinner"></div>
+            Loading dashboard data...
+        </div>
+    </div>
+
+    <script>
+        const userRole = '<?= user.role ?>';
+        const sessionToken = '<?= sessionToken ?>';
+        const appUrl = '<?= appUrl ?>';
+
+        // Show/hide user management based on role
+        if (userRole === 'Super Admin' || userRole === 'Admin') {
+            document.getElementById('usersBtn').style.display = 'inline-block';
+            document.getElementById('manageUsersBtn').style.display = 'block';
+        }
+
+        // Load dashboard data on page load
+        window.onload = function() {
+            loadDashboardData();
+        };
+
+        /**
+         * Load dashboard statistics
+         */
+        function loadDashboardData() {
+            document.getElementById('loading').style.display = 'block';
+            
+            fetch(appUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `action=getDashboardData&sessionToken=${sessionToken}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                
+                if (data.success) {
+                    updateStats(data.stats);
+                } else {
+                    console.error('Failed to load dashboard data:', data.error);
+                    // Show default values
+                    updateStats({
+                        totalItems: '?',
+                        lowStock: '?',
+                        expiringSoon: '?',
+                        totalValue: '?'
+                    });
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                console.error('Error loading dashboard data:', error);
+                updateStats({
+                    totalItems: 'Error',
+                    lowStock: 'Error',
+                    expiringSoon: 'Error',
+                    totalValue: 'Error'
+                });
+            });
+        }
+
+        /**
+         * Update statistics display
+         */
+        function updateStats(stats) {
+            document.getElementById('totalItems').textContent = stats.totalItems || '0';
+            document.getElementById('lowStock').textContent = stats.lowStock || '0';
+            document.getElementById('expiringSoon').textContent = stats.expiringSoon || '0';
+            document.getElementById('totalValue').textContent = stats.totalValue || '$0';
+        }
+
+        /**
+         * Navigation functions
+         */
+        function showInventory() {
+            window.location.href = `${appUrl}?page=inventory&sessionToken=${sessionToken}`;
+        }
+
+        function showUsers() {
+            if (userRole === 'Super Admin' || userRole === 'Admin') {
+                window.location.href = `${appUrl}?page=users&sessionToken=${sessionToken}`;
+            } else {
+                alert('You do not have permission to manage users.');
+            }
+        }
+
+        function showReports() {
+            window.location.href = `${appUrl}?page=reports&sessionToken=${sessionToken}`;
+        }
+
+        function showAddInventory() {
+            window.location.href = `${appUrl}?page=inventory&sessionToken=${sessionToken}&action=add`;
+        }
+
+        function showStockLog() {
+            window.location.href = `${appUrl}?page=reports&sessionToken=${sessionToken}&tab=stock`;
+        }
+
+        function showActivityLog() {
+            window.location.href = `${appUrl}?page=reports&sessionToken=${sessionToken}&tab=activity`;
+        }
+
+        /**
+         * Logout function
+         */
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                fetch(appUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `action=logout&sessionToken=${sessionToken}`
+                })
+                .then(() => {
+                    window.location.href = appUrl;
+                })
+                .catch(error => {
+                    console.error('Logout error:', error);
+                    // Force redirect even if logout call fails
+                    window.location.href = appUrl;
+                });
+            }
+        }
+    </script>
+</body>
+</html>

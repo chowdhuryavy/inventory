@@ -169,7 +169,7 @@ function showWebDashboard(e) {
   // Get company settings
   const settings = getCompanySettings();
   
-  const template = HtmlService.createTemplateFromFile('WebDashboard');
+  const template = HtmlService.createTemplateFromFile('Dashboard');
   template.user = session.user;
   template.sessionToken = sessionToken;
   template.appUrl = ScriptApp.getService().getUrl();
