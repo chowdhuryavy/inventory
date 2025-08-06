@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management System - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            width: 100%;
+            max-width: 400px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .login-header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .login-header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .login-form {
+            padding: 40px 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.95em;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .form-group .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #718096;
+            font-size: 1.1em;
+        }
+
+        .form-group input.with-icon {
+            padding-left: 50px;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e2e8f0;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fed7d7;
+            color: #e53e3e;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #e53e3e;
+            display: none;
+        }
+
+        .success-message {
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #48bb78;
+            display: none;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #718096;
+            font-size: 0.9em;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #718096;
+            font-size: 1.1em;
+            user-select: none;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .remember-me input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .remember-me label {
+            margin: 0;
+            font-weight: normal;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
+        .system-info {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.85em;
+            color: #4a5568;
+        }
+
+        .system-info h4 {
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+
+        .system-info ul {
+            margin-left: 15px;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                margin: 10px;
+            }
+            
+            .login-header {
+                padding: 30px 20px;
+            }
+            
+            .login-form {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>📦 Inventory System</h1>
+            <p>Secure Login Portal</p>
+        </div>
+        
+        <div class="login-form">
+            <div id="errorMessage" class="error-message"></div>
+            <div id="successMessage" class="success-message"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <div style="position: relative;">
+                        <span class="input-icon">📧</span>
+                        <input type="email" id="email" name="email" class="with-icon" required 
+                               placeholder="Enter your email" autocomplete="username">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div style="position: relative;">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="password" name="password" class="with-icon" required 
+                               placeholder="Enter your password" autocomplete="current-password">
+                        <span class="password-toggle" onclick="togglePassword()">👁️</span>
+                    </div>
+                </div>
+                
+                <div class="remember-me">
+                    <input type="checkbox" id="rememberMe" name="rememberMe">
+                    <label for="rememberMe">Remember me on this device</label>
+                </div>
+                
+                <button type="submit" class="login-btn" id="loginBtn">
+                    🚀 Sign In
+                </button>
+                
+                <div class="loading" id="loadingDiv">
+                    <div class="spinner"></div>
+                    <span>Authenticating...</span>
+                </div>
+            </form>
+            
+            <div class="system-info">
+                <h4>Access Levels:</h4>
+                <ul>
+                    <li><strong>Super Admin:</strong> Full system control</li>
+                    <li><strong>Admin:</strong> Manage inventory & users</li>
+                    <li><strong>Cashier:</strong> Inventory operations only</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>🔐 Secure Web Application</p>
+            <p>All activities are logged and monitored</p>
+        </div>
+    </div>
+
+    <script>
+        let appUrl = '<?= appUrl ?>';
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for remembered credentials
+            loadRememberedCredentials();
+            
+            // Focus on email field
+            document.getElementById('email').focus();
+            
+            // Set up form submission
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            
+            // Log page load
+            logClientActivity('Page Load', 'Login page loaded');
+        });
+
+        function handleLogin(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+            
+            // Validate inputs
+            if (!email || !password) {
+                showError('Please enter both email and password');
+                return;
+            }
+            
+            // Show loading state
+            setLoading(true);
+            hideMessages();
+            
+            // Log login attempt
+            logClientActivity('Login Attempt', `Attempting login for: ${email}`);
+            
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('action', 'login');
+            formData.append('email', email);
+            formData.append('password', password);
+            formData.append('userAgent', navigator.userAgent);
+            formData.append('timestamp', new Date().toISOString());
+            
+            // Submit login request
+            fetch(appUrl, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                setLoading(false);
+                
+                if (result.success) {
+                    // Save credentials if remember me is checked
+                    if (rememberMe) {
+                        saveCredentials(email);
+                    } else {
+                        clearSavedCredentials();
+                    }
+                    
+                    showSuccess('Login successful! Redirecting...');
+                    logClientActivity('Login Success', `Successfully logged in as: ${email}`);
+                    
+                    // Redirect to dashboard
+                    setTimeout(() => {
+                        window.location.href = result.redirectUrl;
+                    }, 1500);
+                    
+                } else {
+                    showError(result.error || 'Login failed');
+                    logClientActivity('Login Failed', `Failed login for: ${email} - ${result.error}`);
+                }
+            })
+            .catch(error => {
+                setLoading(false);
+                showError('Network error. Please try again.');
+                logClientActivity('Login Error', `Network error during login: ${error.message}`);
+                console.error('Login error:', error);
+            });
+        }
+
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.querySelector('.password-toggle');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.textContent = '🙈';
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.textContent = '👁️';
+            }
+            
+            logClientActivity('UI Interaction', 'Password visibility toggled');
+        }
+
+        function setLoading(loading) {
+            const loginBtn = document.getElementById('loginBtn');
+            const loadingDiv = document.getElementById('loadingDiv');
+            
+            if (loading) {
+                loginBtn.disabled = true;
+                loginBtn.style.display = 'none';
+                loadingDiv.style.display = 'flex';
+            } else {
+                loginBtn.disabled = false;
+                loginBtn.style.display = 'block';
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            successDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function hideMessages() {
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+
+        function saveCredentials(email) {
+            if (typeof(Storage) !== "undefined") {
+                localStorage.setItem('inventory_email', email);
+                localStorage.setItem('inventory_remember', 'true');
+            }
+        }
+
+        function loadRememberedCredentials() {
+            if (typeof(Storage) !== "undefined") {
+                const savedEmail = localStorage.getItem('inventory_email');
+                const rememberMe = localStorage.getItem('inventory_remember');
+                
+                if (savedEmail && rememberMe === 'true') {
+                    document.getElementById('email').value = savedEmail;
+                    document.getElementById('rememberMe').checked = true;
+                    document.getElementById('password').focus();
+                }
+            }
+        }
+
+        function clearSavedCredentials() {
+            if (typeof(Storage) !== "undefined") {
+                localStorage.removeItem('inventory_email');
+                localStorage.removeItem('inventory_remember');
+            }
+        }
+
+        function logClientActivity(action, description) {
+            try {
+                // Store client-side logs in localStorage for potential syncing
+                const logs = JSON.parse(localStorage.getItem('client_logs') || '[]');
+                logs.push({
+                    timestamp: new Date().toISOString(),
+                    action: action,
+                    description: description,
+                    userAgent: navigator.userAgent,
+                    url: window.location.href
+                });
+                
+                // Keep only last 100 logs
+                if (logs.length > 100) {
+                    logs.splice(0, logs.length - 100);
+                }
+                
+                localStorage.setItem('client_logs', JSON.stringify(logs));
+            } catch (error) {
+                console.log('Logging error:', error);
+            }
+        }
+
+        // Capture additional user interactions
+        document.addEventListener('click', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') {
+                logClientActivity('UI Click', `Clicked on: ${e.target.type || e.target.tagName} - ${e.target.id || e.target.className}`);
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.target.tagName === 'INPUT') {
+                // Don't log actual keystrokes for security, just field interaction
+                logClientActivity('Field Interaction', `Typing in field: ${e.target.id || e.target.name}`);
+            }
+        });
+
+        // Log page unload
+        window.addEventListener('beforeunload', function() {
+            logClientActivity('Page Unload', 'User leaving login page');
+        });
+
+        // Log focus/blur events
+        window.addEventListener('focus', function() {
+            logClientActivity('Window Focus', 'User returned to login page');
+        });
+
+        window.addEventListener('blur', function() {
+            logClientActivity('Window Blur', 'User left login page (tab/window switch)');
+        });
+    </script>
+</body>
+</html>

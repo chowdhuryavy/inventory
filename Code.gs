@@ -145,7 +145,7 @@ function createStockLogSheet(ss) {
 }
 
 /**
- * Create Activity Log sheet with proper headers
+ * Create Activity Log sheet with proper headers for detailed logging
  */
 function createActivityLogSheet(ss) {
   let sheet = ss.getSheetByName(CONFIG.SHEETS.ACTIVITY_LOG);
@@ -154,7 +154,7 @@ function createActivityLogSheet(ss) {
   }
   
   sheet.clear();
-  const headers = ['Timestamp', 'User Email', 'Action', 'Description'];
+  const headers = ['Timestamp', 'User Email', 'Category', 'Description', 'Details (JSON)'];
   
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
@@ -162,6 +162,13 @@ function createActivityLogSheet(ss) {
   
   // Format timestamp column
   sheet.getRange('A:A').setNumberFormat('MM/dd/yyyy hh:mm:ss');
+  
+  // Set column widths for better readability
+  sheet.setColumnWidth(1, 150); // Timestamp
+  sheet.setColumnWidth(2, 200); // User Email
+  sheet.setColumnWidth(3, 120); // Category
+  sheet.setColumnWidth(4, 300); // Description
+  sheet.setColumnWidth(5, 400); // Details JSON
   
   return sheet;
 }
