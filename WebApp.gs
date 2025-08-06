@@ -270,6 +270,87 @@ function showWebReports(e) {
 }
 
 /**
+ * Handle get dashboard data request
+ */
+function handleGetDashboardData(e) {
+  try {
+    const sessionToken = e.parameter.sessionToken;
+    
+    if (!verifySession(sessionToken)) {
+      return { success: false, error: 'Invalid session' };
+    }
+    
+    // Get dashboard statistics
+    const inventorySheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Inventory');
+    if (!inventorySheet) {
+      return { success: false, error: 'Inventory sheet not found' };
+    }
+    
+    const data = inventorySheet.getDataRange().getValues();
+    const headers = data[0];
+    const rows = data.slice(1);
+    
+    // Calculate statistics
+    let totalItems = rows.length;
+    let lowStock = 0;
+    let expiringSoon = 0;
+    let totalValue = 0;
+    
+    const today = new Date();
+    const thirtyDaysFromNow = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
+    
+    rows.forEach(row => {
+      // Find column indices
+      const quantityIdx = headers.indexOf('Quantity');
+      const minStockIdx = headers.indexOf('Min Stock Level');
+      const priceIdx = headers.indexOf('Unit Price');
+      const expiryIdx = headers.indexOf('Expiry Date');
+      
+      // Check low stock
+      if (quantityIdx !== -1 && minStockIdx !== -1) {
+        const quantity = parseInt(row[quantityIdx]) || 0;
+        const minStock = parseInt(row[minStockIdx]) || 0;
+        if (quantity <= minStock) {
+          lowStock++;
+        }
+      }
+      
+      // Calculate total value
+      if (quantityIdx !== -1 && priceIdx !== -1) {
+        const quantity = parseInt(row[quantityIdx]) || 0;
+        const price = parseFloat(row[priceIdx]) || 0;
+        totalValue += quantity * price;
+      }
+      
+      // Check expiring items
+      if (expiryIdx !== -1 && row[expiryIdx]) {
+        const expiryDate = new Date(row[expiryIdx]);
+        if (expiryDate <= thirtyDaysFromNow) {
+          expiringSoon++;
+        }
+      }
+    });
+    
+    return {
+      success: true,
+      stats: {
+        totalItems: totalItems,
+        lowStock: lowStock,
+        expiringSoon: expiringSoon,
+        totalValue: `$${totalValue.toFixed(2)}`
+      }
+    };
+    
+  } catch (error) {
+    console.error('Dashboard data error:', error);
+    return {
+      success: false,
+      error: 'Error loading dashboard data: ' + error.toString()
+    };
+  }
+}
+
+/**
  * Handle password reset request
  */
 function handleResetPassword(e) {
@@ -653,6 +734,183 @@ function setStoredPassword(email, password) {
   // In production, hash the password properly
   PropertiesService.getScriptProperties().setProperty(`pwd_${email}`, password);
   logDetailedActivity('Password Set', `Password set for user: ${email}`, { email: email });
+}
+
+/**
+ * Handle get users request
+ */
+function handleGetUsers(e) {
+  try {
+    const sessionToken = e.parameter.sessionToken;
+    
+    if (!verifySession(sessionToken)) {
+      return { success: false, error: 'Invalid session' };
+    }
+    
+    const session = getSessionData(sessionToken);
+    
+    // Check permissions - only Admin and Super Admin can view users
+    if (!hasWebPermission(session.user, 'manage_users')) {
+      return { success: false, error: 'Access denied' };
+    }
+    
+    const usersSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+    if (!usersSheet) {
+      return { success: false, error: 'Users sheet not found' };
+    }
+    
+    const data = usersSheet.getDataRange().getValues();
+    const headers = data[0];
+    const rows = data.slice(1);
+    
+    const users = rows.map(row => ({
+      email: row[0] || '',
+      name: row[1] || '',
+      role: row[3] || '',
+      status: row[4] || '',
+      dateAdded: row[5] ? new Date(row[5]).toLocaleDateString() : ''
+    }));
+    
+    return {
+      success: true,
+      data: users
+    };
+    
+  } catch (error) {
+    console.error('Get users error:', error);
+    return {
+      success: false,
+      error: 'Error loading users: ' + error.toString()
+    };
+  }
+}
+
+/**
+ * Handle get reports request
+ */
+function handleGetReports(e) {
+  try {
+    const sessionToken = e.parameter.sessionToken;
+    const reportType = e.parameter.reportType;
+    
+    if (!verifySession(sessionToken)) {
+      return { success: false, error: 'Invalid session' };
+    }
+    
+    const inventorySheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Inventory');
+    const stockLogSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Stock_log');
+    const activityLogSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Activity_log');
+    
+    let reportData = [];
+    
+    switch (reportType) {
+      case 'inventory':
+        if (inventorySheet) {
+          const data = inventorySheet.getDataRange().getValues();
+          const headers = data[0];
+          reportData = data.slice(1).map(row => {
+            const obj = {};
+            headers.forEach((header, index) => {
+              obj[header] = row[index] || '';
+            });
+            return obj;
+          });
+        }
+        break;
+        
+      case 'lowstock':
+        if (inventorySheet) {
+          const data = inventorySheet.getDataRange().getValues();
+          const headers = data[0];
+          const rows = data.slice(1);
+          
+          const quantityIdx = headers.indexOf('Quantity');
+          const minStockIdx = headers.indexOf('Min Stock Level');
+          
+          reportData = rows.filter(row => {
+            const quantity = parseInt(row[quantityIdx]) || 0;
+            const minStock = parseInt(row[minStockIdx]) || 0;
+            return quantity <= minStock;
+          }).map(row => {
+            const obj = {};
+            headers.forEach((header, index) => {
+              obj[header] = row[index] || '';
+            });
+            return obj;
+          });
+        }
+        break;
+        
+      case 'expiring':
+        if (inventorySheet) {
+          const data = inventorySheet.getDataRange().getValues();
+          const headers = data[0];
+          const rows = data.slice(1);
+          
+          const expiryIdx = headers.indexOf('Expiry Date');
+          const today = new Date();
+          const thirtyDaysFromNow = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
+          
+          reportData = rows.filter(row => {
+            if (expiryIdx !== -1 && row[expiryIdx]) {
+              const expiryDate = new Date(row[expiryIdx]);
+              return expiryDate <= thirtyDaysFromNow;
+            }
+            return false;
+          }).map(row => {
+            const obj = {};
+            headers.forEach((header, index) => {
+              obj[header] = row[index] || '';
+            });
+            return obj;
+          });
+        }
+        break;
+        
+      case 'stocklog':
+        if (stockLogSheet) {
+          const data = stockLogSheet.getDataRange().getValues();
+          const headers = data[0];
+          reportData = data.slice(1).slice(-50).map(row => { // Last 50 entries
+            const obj = {};
+            headers.forEach((header, index) => {
+              obj[header] = row[index] || '';
+            });
+            return obj;
+          });
+        }
+        break;
+        
+      case 'activitylog':
+        if (activityLogSheet) {
+          const data = activityLogSheet.getDataRange().getValues();
+          const headers = data[0];
+          reportData = data.slice(1).slice(-50).map(row => { // Last 50 entries
+            const obj = {};
+            headers.forEach((header, index) => {
+              obj[header] = row[index] || '';
+            });
+            return obj;
+          });
+        }
+        break;
+        
+      default:
+        return { success: false, error: 'Unknown report type' };
+    }
+    
+    return {
+      success: true,
+      data: reportData
+    };
+    
+  } catch (error) {
+    console.error('Get reports error:', error);
+    return {
+      success: false,
+      error: 'Error generating report: ' + error.toString()
+    };
+  }
 }
 
 /**
