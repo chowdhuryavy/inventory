@@ -10,8 +10,8 @@ const CONFIG = {
   SHEETS: {
     INVENTORY: 'Inventory',
     USERS: 'Users', 
-    STOCK_LOG: 'Stock_Log',
-    ACTIVITY_LOG: 'Activity_Log',
+    STOCK_LOG: 'Stock_log',
+    ACTIVITY_LOG: 'Activity_log',
     REPORTS: 'Reports'
   },
   ROLES: {
