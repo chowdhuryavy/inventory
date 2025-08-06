@@ -288,7 +288,12 @@
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-top: 2px solid white;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spinButton 1s linear infinite;
+        }
+        
+        @keyframes spinButton {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .loading {
@@ -612,10 +617,11 @@
                         clearSavedCredentials();
                     }
                     
-                    // Redirect to loading page first, then to dashboard
+                    // Redirect directly to dashboard for debugging
                     setTimeout(() => {
-                        const targetUrl = encodeURIComponent(`${appUrl}?page=dashboard&sessionToken=${result.sessionToken}`);
-                        window.location.href = `${appUrl}?page=loading&targetUrl=${targetUrl}`;
+                        const dashboardUrl = `${appUrl}?page=dashboard&sessionToken=${result.sessionToken}`;
+                        console.log('Redirecting to dashboard:', dashboardUrl);
+                        window.location.href = dashboardUrl;
                     }, 1000);
                 } else {
                     let errorMsg = result.error || result.message || 'Login failed';

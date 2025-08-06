@@ -19,6 +19,8 @@ function doGet(e) {
       return showLoginPage();
     case 'loading':
       return showLoadingPage(e.parameter.targetUrl);
+    case 'debug':
+      return showDebugPage();
     case 'dashboard':
       return showWebDashboard(e);
     case 'inventory':
@@ -127,6 +129,25 @@ function showLoginPage() {
     const template = HtmlService.createTemplateFromFile('WebLogin-Mobile');
     template.appUrl = ScriptApp.getService().getUrl();
     
+    // Ensure Settings sheet exists and has data
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let settingsSheet = ss.getSheetByName('Settings');
+    
+    if (!settingsSheet) {
+      console.log('Settings sheet not found, creating...');
+      settingsSheet = createSettingsSheet(ss);
+    }
+    
+    // Check if has data
+    const lastRow = settingsSheet.getLastRow();
+    console.log('Settings sheet last row:', lastRow);
+    
+    if (lastRow < 2) {
+      console.log('No data in Settings sheet, adding defaults...');
+      const defaultData = [['Your Company Name', 'Professional Inventory Management', '🏢']];
+      settingsSheet.getRange(2, 1, 1, 3).setValues(defaultData);
+    }
+    
     // Get company settings
     const settings = getCompanySettings();
     console.log('Company settings loaded:', settings);
@@ -179,6 +200,25 @@ function showWebDashboard(e) {
     if (!session || !session.user) {
       console.log('No valid session data, redirecting to login');
       return showLoginPage();
+    }
+    
+    // Ensure Settings sheet exists and has data  
+    console.log('Checking Settings sheet...');
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let settingsSheet = ss.getSheetByName('Settings');
+    
+    if (!settingsSheet) {
+      console.log('Settings sheet not found, creating...');
+      settingsSheet = createSettingsSheet(ss);
+    }
+    
+    const lastRow = settingsSheet.getLastRow();
+    console.log('Settings sheet last row:', lastRow);
+    
+    if (lastRow < 2) {
+      console.log('No data in Settings sheet, adding defaults...');
+      const defaultData = [['Your Company Name', 'Professional Inventory Management', '🏢']];
+      settingsSheet.getRange(2, 1, 1, 3).setValues(defaultData);
     }
     
     // Get company settings with detailed logging
@@ -450,6 +490,48 @@ function handleResetPassword(e) {
       success: false,
       error: 'Password reset system error: ' + error.toString()
     };
+  }
+}
+
+/**
+ * Show debug page to test settings
+ */
+function showDebugPage() {
+  try {
+    console.log('showDebugPage called');
+    
+    // Force ensure Settings sheet exists
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let settingsSheet = ss.getSheetByName('Settings');
+    
+    if (!settingsSheet) {
+      console.log('Creating Settings sheet for debug...');
+      settingsSheet = createSettingsSheet(ss);
+    }
+    
+    const lastRow = settingsSheet.getLastRow();
+    if (lastRow < 2) {
+      console.log('Adding debug data to Settings sheet...');
+      const defaultData = [['Debug Company', 'Debug Slogan Test', '🔧']];
+      settingsSheet.getRange(2, 1, 1, 3).setValues(defaultData);
+    }
+    
+    const settings = getCompanySettings();
+    console.log('Debug - company settings:', settings);
+    
+    const template = HtmlService.createTemplateFromFile('DebugSettings');
+    template.appUrl = ScriptApp.getService().getUrl();
+    template.companyName = settings.companyName;
+    template.slogan = settings.slogan;
+    template.logo = settings.logo;
+    
+    return template.evaluate()
+      .setTitle('Settings Debug')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+      
+  } catch (error) {
+    console.error('Error in showDebugPage:', error);
+    return HtmlService.createHtml(`<h1>Debug Error</h1><p>${error.message}</p>`);
   }
 }
 
